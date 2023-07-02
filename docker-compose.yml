@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  jageocoder-server:
+    container_name: jageocoder-server
+    build:
+      dockerfile: Dockerfile
+    shm_size: 512m
+    ports:
+      - 5000:5000
