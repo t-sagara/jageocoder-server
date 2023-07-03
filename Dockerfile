@@ -1,7 +1,9 @@
 # syntax = docker/dockerfile:1.2
 FROM python:3.9-alpine
-ARG DIC_URL=https://www.info-proto.com/static/jageocoder/20230702/v2/jukyo_all_v20.zip
 EXPOSE 5000
+
+ARG DIC_URL=https://www.info-proto.com/static/jageocoder/20230702/v2/jukyo_all_v20.zip
+ENV JAGEOCODER_DB2_DIR /data/db2
 
 WORKDIR /app
 
@@ -16,7 +18,7 @@ RUN curl ${DIC_URL} -o /tmp/jageocoder_dic.zip
 RUN python3 -m jageocoder install-dictionary /tmp/jageocoder_dic.zip
 
 # Build R-tree for reverse geocoding
-RUN python3 -m jageocoder reverse 140.0 35.0
+# RUN python3 -m jageocoder reverse 140.0 35.0
 
 # Setup server
 COPY ./server /app/server

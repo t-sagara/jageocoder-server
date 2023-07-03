@@ -1,14 +1,11 @@
-import csv
-import io
 import json
 from typing import List
 import os
 import re
 
-import charset_normalizer
 from flask_cors import cross_origin
 from flask import Flask, flash, redirect, request, \
-    render_template, jsonify, Response, stream_with_context
+    render_template, jsonify, Response
 
 import jageocoder
 from jageocoder.address import AddressLevel
@@ -189,7 +186,21 @@ def license():
 
 @app.route("/webapi")
 def webapi():
-    return render_template('webapi.html')
+    jageocoder.set_search_config(
+            best_only=True,
+            target_area=["東京都"],
+            aza_skip=None)
+    geocoding_result = json.dumps(
+        [x.as_dict() for x in jageocoder.searchNode('西新宿2丁目8-1')],
+        indent=2, ensure_ascii=False)
+    rgeocoding_result = json.dumps(
+        jageocoder.reverse(x=139.69175, y=35.689472, level=7),
+        indent=2, ensure_ascii=False)
+    return render_template(
+        'webapi.html',
+        geocoding_result=geocoding_result,
+        rgeocoding_result=rgeocoding_result,
+    )
 
 
 @app.route("/search", methods=['POST', 'GET'])

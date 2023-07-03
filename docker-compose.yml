@@ -6,11 +6,14 @@ services:
     build:
       dockerfile: Dockerfile
       args:
-        - DIC_URL=https://www.info-proto.com/static/jageocoder/20230702/v2/jukyo_all_v20.zip
+        - DIC_URL=https://www.info-proto.com/static/jageocoder/latest/v2/jukyo_all_v20.zip
     shm_size: 512m
     volumes:
-      - type: bind
-        source: ./data
+      - type: volume
+        source: jageocoder-server-data
         target: /data
     ports:
       - 5000:5000
+
+volumes:
+  jageocoder-server-data: {}

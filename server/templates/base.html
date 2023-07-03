@@ -77,12 +77,14 @@
   <div class="container">
     <div class="row header">
       <div class="col">
-        <a href="https://t-sagara.github.io/jageocoder/" target="_blank">
-          Jageocoder</a>
-        <a href="{{ url_for('index') }}">ジオコーディング</a>
+        <a href="{{ url_for('index') }}">住所解析</a>
         <a href="{{ url_for('csvmatch') }}">CSV変換</a>
-        <a href="{{ url_for('license') }}">利用データ・出典・利用条件</a>
         <a href="{{ url_for('webapi') }}">WebAPI</a>
+      </div>
+      <div class="col text-end">
+        <a href="{{ url_for('license') }}">利用データ・出典・利用条件</a>
+        <a href="https://t-sagara.github.io/jageocoder/" target="_blank">
+          Jageocoder について</a>
       </div>
     </div>
 

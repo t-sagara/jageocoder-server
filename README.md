@@ -42,12 +42,21 @@ CSV に含まれる住所表記に経緯度を追加したり、住所文字列�
 
 - Docker Server または Docker Desktop が必要です。
 
+- インストールする辞書を選びます
+
+    - [データファイル一覧](https://www.info-proto.com/static/jageocoder/latest/v2/)
+      から選択し、 URL を `docker-compose.yml` の `DIC_URL` で
+      指定してください。
+
 - 以下の手順でコンテナを作成して実行します。
 
         $ docker compose build
         $ docker compose up -d
 
 - ブラウザで `http://localhost:5000/` にアクセスしてください。
+
+    - リバースジオコーディング機能を最初に利用する際に
+      R-tree インデックスを作成するため10分以上かかることがあります。
 
 - 作業が終わったらコンテナを停止します。
 

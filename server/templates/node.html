@@ -93,12 +93,13 @@
   let jsonLayers = [];
   let map = new maplibregl.Map({
     container: 'map',
-    /*  Use GSI Vector tile */
+    /*  Use GSI Vector tile
     style:
       // 'https://gsi-cyberjapan.github.io/gsivectortile-mapbox-gl-js/std.json',
       // 'https://gsi-cyberjapan.github.io/optimal_bvmap/style/std.json',
-      '{{ url_for("static", filename="styles/gsi_optimal_std.json") }}',
-    /*
+      // '{{ url_for("static", filename="styles/gsi_optimal_std.json") }}',
+    */
+    /*  Use GSI Raster tile */
     style: {
       version: 8,
       sources: {
@@ -120,7 +121,7 @@
         },
       ],
     },
-    */
+    /* */
     center: [{{ node.x }}, {{ node.y }} ],
   zoom: 7 + {{ node.level }},
     minZoom: 3,

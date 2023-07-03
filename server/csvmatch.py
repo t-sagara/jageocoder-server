@@ -4,7 +4,7 @@ import io
 import re
 
 import charset_normalizer
-from flask import flash, request, stream_with_context
+from flask import request, stream_with_context
 
 import jageocoder
 from jageocoder.address import AddressLevel
