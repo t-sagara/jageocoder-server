@@ -5,82 +5,125 @@
 {% block content %}
 <h1>CSV変換</h1>
   <form method="post" enctype="multipart/form-data">
-    <div class="mb-3">
-      <div><label for="head" class="form-label">1行目の処理</label></div>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="head" id="head1" value="1" checked="checked">
-        <label class="form-check-label" for="head1">見出し行とする</label>
+    <div class="row">
+      <div class="col-sm-12 col-md-6">
+        <div class="mb-3">
+          <div><label for="head" class="form-label">1行目の処理</label></div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="head" id="head1" value="1" checked="checked">
+            <label class="form-check-label" for="head1">見出し行とする</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="head" id="head2" value="0">
+            <label class="form-check-label" for="head2">データ行とする</label>
+          </div>
+        </div>
       </div>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="head" id="head2" value="0">
-        <label class="form-check-label" for="head2">データ行とする</label>
-      </div>
-    </div>
-    <div class="mb-3">
-      <label for="cols" class="form-label">住所を含むカラム番号または列名</label>
-      <input class="form-control" id="cols" name="cols" aria-describedby="colHelp"/>
-      <div id="colHelp" class="form-text">
-        先頭カラムを1とします。複数カラムに分かれている場合はカラム番号・列名をカンマで区切ってください。
-      </div>
-    </div>
-    <div class="mb-3">
-      <div><label for="outputcolumns" class="form-label">出力項目</label></div>
-      {% for col in columns: %}
-      <div class="form-check form-switch form-check-inline">
-        {% if col[1][1] %}
-          <input class="form-check-input" type="checkbox" id="{{ col[0] }}" name="{{ col[0] }}" checked="checked">
-        {% else %}
-        <input class="form-check-input" type="checkbox" id="{{ col[0] }}" name="{{ col[0] }}">
-        {% endif %}
-        <label class="form-check-label" for="{{ col[0] }}">{{ col[1][0] }}</label>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="mb-3">
-      <label for="ienc" class="form-label">入力文字エンコーディング</label>
-      <select class="form-select" id="ienc" name="ienc">
-        <option selected="selected" value="auto">自動判定</option>
-        <option value="utf_8">UTF-8(BOM無し)</option>
-        <option value="utf_8_sig">UTF-8(BOM有り)</option>
-        <option value="cp932">シフトJIS(CP932)</option>
-        <option value="euc_jp">日本語EUC</option>
-        <option value="utf_16">UTF-16</option>
-      </select>
-    </div>
-    <div class="mb-3">
-      <label for="oenc" class="form-label">出力文字エンコーディング</label>
-      <select class="form-select" id="oenc" name="oenc">
-        <option selected="selected" value="auto">入力と同じ</option>
-        <option value="utf_8">UTF-8(BOM無し)</option>
-        <option value="utf_8_sig">UTF-8(BOM有り)</option>
-        <option value="cp932">シフトJIS(CP932)</option>
-        <option value="euc_jp">拡張UNIXコード(EUC)</option>
-        <option value="utf_16">UTF-16</option>
-      </select>
-    </div>
-    <div class="mb-3">
-      <div><label for="nc" class="form-label">座標情報を持たない辞書データの用否</label></div>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="nc" id="nc1" value="1" checked="checked">
-        <label class="form-check-label" for="nc1">利用しない（座標取得用）</label>
-      </div>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="nc" id="nc2" value="0">
-        <label class="form-check-label" for="nc2">利用する（住所正規化用）</label>
+      <div class="col-sm-12 col-md-6">
+        <div class="mb-3">
+          <label for="cols" class="form-label">住所を含むカラム番号または列名</label>
+          <input class="form-control" id="cols" name="cols" aria-describedby="colHelp"/>
+          <div id="colHelp" class="form-text">
+            先頭カラムを1とします。複数カラムに分かれている場合はカラム番号・列名をカンマで区切ってください。
+          </div>
+        </div>
       </div>
     </div>
-    <div class="mb-3">
-      <label for="ofname" class="form-label">出力ファイル名</label>
-      <select class="form-select" id="ofname" name="ofname">
-        <option selected="selected" value="">入力ファイル名と同じ</option>
-        <option value="add_dt">入力ファイル名_YYYYMMDD_hhmmss.csv</option>
-        <option value="dt">YYYYMMDD_hhmmss.csv</option>
-      </select>
+    <div class="row">
+      <div class="col-sm-12 col-md-6">
+        <div class="mb-3">
+          <label for="ienc" class="form-label">入力文字エンコーディング</label>
+          <select class="form-select" id="ienc" name="ienc">
+            <option selected="selected" value="auto">自動判定</option>
+            <option value="utf_8">UTF-8(BOM無し)</option>
+            <option value="utf_8_sig">UTF-8(BOM有り)</option>
+            <option value="cp932">シフトJIS(CP932)</option>
+            <option value="euc_jp">日本語EUC</option>
+            <option value="utf_16">UTF-16</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-sm-12 col-md-6">
+        <div class="mb-3">
+          <label for="oenc" class="form-label">出力文字エンコーディング</label>
+          <select class="form-select" id="oenc" name="oenc">
+            <option selected="selected" value="auto">入力と同じ</option>
+            <option value="utf_8">UTF-8(BOM無し)</option>
+            <option value="utf_8_sig">UTF-8(BOM有り)</option>
+            <option value="cp932">シフトJIS(CP932)</option>
+            <option value="euc_jp">拡張UNIXコード(EUC)</option>
+            <option value="utf_16">UTF-16</option>
+          </select>
+        </div>
+      </div>
     </div>
-    <div class="mb-3">
-      <label for="file" class="form-label">変換するファイル</label>
-      <input type="file" class="form-control" id="file" name="file">
+    <div class="accordion" id="accordionExample">
+      <div class="accordion-item">
+        <div class="accordion-header" id="headingOne">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+            オプション設定
+          </button>
+        </div>
+        <div id="collapseOne" class="accordion-collapse collapse hide" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+          <div class="accordion-body">
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="mb-3">
+                  <div><label for="outputcolumns" class="form-label">出力項目</label></div>
+                  {% for col in columns: %}
+                  <div class="form-check form-switch form-check-inline">
+                    {% if col[1][1] %}
+                      <input class="form-check-input" type="checkbox" id="{{ col[0] }}" name="{{ col[0] }}" checked="checked">
+                    {% else %}
+                    <input class="form-check-input" type="checkbox" id="{{ col[0] }}" name="{{ col[0] }}">
+                    {% endif %}
+                    <label class="form-check-label" for="{{ col[0] }}">{{ col[1][0] }}</label>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="mb-3">
+                  <div><label for="nc" class="form-label">座標情報を持たない辞書データの用否</label></div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="nc" id="nc1" value="1" checked="checked">
+                    <label class="form-check-label" for="nc1">利用しない（座標取得用）</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="nc" id="nc2" value="0">
+                    <label class="form-check-label" for="nc2">利用する（住所正規化用）</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <button type="submit" class="btn btn-primary">変換</button>
+    <div class="row">
+      <div class="col-sm-12 col-md-6">
+        <div class="mb-3">
+          <label for="ofname" class="form-label">出力ファイル名</label>
+          <select class="form-select" id="ofname" name="ofname">
+            <option selected="selected" value="">入力ファイル名と同じ</option>
+            <option value="add_dt">入力ファイル名_YYYYMMDD_hhmmss.csv</option>
+            <option value="dt">YYYYMMDD_hhmmss.csv</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-sm-12 col-md-6">
+        <div class="mb-3">
+          <label for="file" class="form-label">変換する入力ファイル</label>
+          <input type="file" class="form-control" id="file" name="file">
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">変換</button>
+      </div>
+    </div>
   </form>
 {% endblock %}

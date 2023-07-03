@@ -274,6 +274,9 @@ def parse_multipart_formdata():
             else:
                 raise ValueError(f'"{col}" は見出し行にありません。')
 
+    if len(cols) == 0:
+        raise ValueError('住所を含むカラム番号または列名を入力してください。')
+
     args['cols'] = cols
 
     return args, buffer
