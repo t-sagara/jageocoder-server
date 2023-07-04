@@ -11,7 +11,7 @@ services:
     volumes:
       - type: volume
         source: jageocoder-server-db
-        target: /db
+        target: /opt
       - type: bind
         source: ./data
         target: /data
