@@ -215,6 +215,14 @@ def parse_multipart_formdata():
 
             break
 
+    return args, chunk
+
+
+@stream_with_context
+def check_params(args, chunk):
+    """
+    Check posted form parameters.
+    """
     # Check if file is set
     if args['filename'] == '' or len(chunk) == 0:
         raise ValueError("ファイルを指定してください。")
@@ -260,6 +268,9 @@ def parse_multipart_formdata():
 
     # Select column numbers containing addresses
     cols = []
+    if args['cols'].strip() == '':
+        raise ValueError('住所を含むカラム番号または列名を入力してください。')
+
     for col in args['cols'].split(','):
         col = col.strip()
         try:
@@ -289,7 +300,8 @@ def geocoding_request_csv(args, buffer):
         best_only=True,
         aza_skip=None,
         require_coordinates=args['nc'] != '1',
-        target_area=[])
+        target_area=args["area"],
+    )
 
     boundary = args['boundary'].decode(args['ienc'])
     output = io.StringIO()

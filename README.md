@@ -24,8 +24,8 @@ CSV に含まれる住所表記に経緯度を追加したり、住所文字列�
 - 以下の手順で実行に必要なパッケージおよびデータをインストールします。
 
         $ python -m pip install -r requrements.txt
-        $ curl https://www.info-proto.com/static/jageocoder/latest/v2/jukyo_all_v20.zip -o jukyo_all_v20.zip
-        $ python -m jageocoder install-dictionary jukyo_all_v20.zip
+        $ curl https://www.info-proto.com/static/jageocoder/latest/v2/jukyo_all_v20.zip -o data/jukyo_all_v20.zip
+        $ python -m jageocoder install-dictionary data/jukyo_all_v20.zip
 
 - サーバを起動します。
 
@@ -42,10 +42,11 @@ CSV に含まれる住所表記に経緯度を追加したり、住所文字列�
 
 - Docker Server または Docker Desktop が必要です。
 
-- インストールする辞書を選びます
+- インストールする辞書をセットします。
 
     - [データファイル一覧](https://www.info-proto.com/static/jageocoder/latest/v2/)
-      から選択し、 URL を `docker-compose.yml` の `DIC_URL` で
+      からダウンロードし、`data/` に配置してください。
+    - zip ファイル名をを `docker-compose.yml` の `DICFILE` で
       指定してください。
 
 - 以下の手順でコンテナを作成して実行します。
@@ -56,12 +57,23 @@ CSV に含まれる住所表記に経緯度を追加したり、住所文字列�
 - ブラウザで `http://localhost:5000/` にアクセスしてください。
 
     - リバースジオコーディング機能を最初に利用する際に
-      R-tree インデックスを作成するため10分以上かかることがあります。
+      R-tree インデックスを作成するため、
+      データファイルが大きい場合は10分以上かかることがあります。
 
 - 作業が終わったらコンテナを停止します。
 
         $ docker compose down
 
+    インストールした辞書データは Docker Volume に保存されているので、
+    次回実行時はコンテナを起動するだけで利用できます。
+
+        $ docker compose up -d
+
+- もう利用しない場合はアンインストールします。
+
+    完全にアンインストールするには Volume も削除してください。
+
+        $ docker compose down -v
 
 ## 著作者表示
 

@@ -4,8 +4,7 @@ import os
 import re
 
 from flask_cors import cross_origin
-from flask import Flask, flash, redirect, request, \
-    render_template, jsonify, Response
+from flask import Flask, flash, request, render_template, jsonify, Response
 
 import jageocoder
 from jageocoder.address import AddressLevel
@@ -158,11 +157,24 @@ def search_postcode(code):
 @app.route("/csv", methods=['POST', 'GET'])
 def csvmatch():
     import csvmatch
+    input_args = {
+        "head": "1", "ienc": "auto", "oenc": "auto",
+        "ofname": "add_dt", "nc": "1",
+    }
+    for col in csvmatch.output_columns:
+        if col[1][1] is True:
+            input_args[col[0]] = "on"
+
     if request.method == 'GET':
-        return render_template('csv.html', columns=csvmatch.output_columns)
+        return render_template(
+            'csv.html',
+            columns=csvmatch.output_columns,
+            args=input_args)
 
     try:
-        args, buf = csvmatch.parse_multipart_formdata()
+        input_args, chunk = csvmatch.parse_multipart_formdata()
+        args, buf = csvmatch.check_params(input_args, chunk)
+        args["area"] = _split_args(args["area"])
         res = Response(csvmatch.geocoding_request_csv(args, buf))
         res.content_type = f"text/csv; charset={args['oenc']}"
         res.headers["Content-Disposition"] = \
@@ -170,10 +182,16 @@ def csvmatch():
         return res
     except RuntimeError as e:
         flash("送信データの解析に失敗しました。エラー: {}".format(e))
-        return redirect(request.url)
+        return render_template(
+            'csv.html',
+            columns=csvmatch.output_columns,
+            args=input_args)
     except ValueError as e:
         flash("パラメータが正しくありません： {}".format(e))
-        return redirect(request.url)
+        return render_template(
+            'csv.html',
+            columns=csvmatch.output_columns,
+            args=input_args)
 
 
 @app.route("/license")
