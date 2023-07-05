@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}トップ | Jageocoder{% endblock %}
+{% block title %}解析結果 | Jageocoder{% endblock %}
 
 {% block content %}
 {% include "addressform.html" %}
 
 {% if results %}
-<h1>結果一覧</h1>
+<h1>解析結果一覧</h1>
 <ul id="results">
   {% for result in results %}
   <li class="node">
@@ -26,12 +26,8 @@
   </li>
   {% endfor %}
 </ul>
-<h1>JSON表現</h1>
-<div class="row">
-  <div class="col">
-    <textarea class="form-control col-sm-12" id="result_text" rows="5">{{ results }}</textarea>
-  </div>
-</div>
+<div>一覧中の住所要素（都道府県名・市区町村名など）をクリックすると、
+住所データベース内の詳細情報を確認できます。</div>
 {% else %}
 <h1>住所の例</h1>
 <ul>

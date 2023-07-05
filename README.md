@@ -4,13 +4,20 @@
 住所文字列を解析したり CSV に含まれる住所表記に経緯度を追加するといった
 処理を実現するウェブアプリケーションです。
 
-あらかじめデータファイルをダウンロードしておけば、スタンドアロンで動作します。
-災害時やセキュリティ上の理由で外部サービスを利用できない環境や、
-外部に送信できないデータをローカル環境で処理することができます。
+データファイルをダウンロードしておけば、スタンドアロンで動作します。
+ネットワークが利用できない災害時、セキュリティ上の理由で外部サービスを
+利用できない環境、または外部に送信できないデータをローカル環境で
+処理したい場合などに利用できます。
 
-また、サブネット内で他のアプリケーションから利用できる WebAPI も提供します。
+また、サブネット内で他のアプリケーションから利用できる WebAPI 
+サーバ機能も提供します。
 
 # 利用手順
+
+- [GitHub](https://github.com/t-sagara/jageocoder-server) から最新の
+  コードを clone, または ZIP ファイルをダウンロードしてください。
+- 任意の場所に展開し、ターミナル (Windows の場合は PowerShell) で
+  この README.md ファイルがあるディレクトリを開いてください。
 
 ## Docker を利用する場合
 
@@ -21,8 +28,7 @@
 
     - [データファイル一覧](https://www.info-proto.com/static/jageocoder/latest/v2/)
       からダウンロードし、`data/` に配置してください。
-    - zip ファイル名を `docker-compose.yml` の `DICFILE` で
-      指定してください。
+    - data ディレクトリには他の zip ファイルは置かないでください。
 
 - 以下の手順でコンテナを作成し、実行します。
 
@@ -65,18 +71,42 @@
         $ python -m venv .venv
         $ .venv/bin/activate
 
-- 以下の手順で実行に必要なパッケージおよびデータをインストールします。
+- Python パッケージをインストールします。
 
         $ python -m pip install -r requrements.txt
-        $ curl https://www.info-proto.com/static/jageocoder/latest/v2/jukyo_all_v20.zip -o data/jukyo_all_v20.zip
-        $ python -m jageocoder install-dictionary data/jukyo_all_v20.zip
+
+- 辞書データファイルをダウンロード・インストールします。
+
+    サーバ上の他のアプリケーションで辞書データをインストール済みの場合、
+    辞書がインストールされているディレクトリを環境変数 `JAGEOCODER_DB2_DIR` に
+    セットしてください。
+
+    インストールされていない場合は [データファイル一覧](https://www.info-proto.com/static/jageocoder/latest/v2/)
+    から適切なデータファイルをダウンロードして、次のコマンドでインストールしてください。
+
+        $ python -m jageocoder install-dictionary <データファイルzip>
+        (例)
+        $ python -m jageocoder install-dictionary jukyo_all_v20.zip
+
+    リバースジオコーディングで利用する R-tree インデックスは
+    必要になった時に自動的に構築されますが、時間がかかるので
+    先に機能を呼び出してインデックスを構築しておくことをお勧めします。
+
+        $ python -m jageocoder reverse 140.0 35.0
 
 - サーバを起動します。
 
-        $ cd server
-        $ gunicorn app:app --bind='0.0.0.0:5000'
+        $ python server/run_waitress.py
+
+    サーバのバインドアドレス (0.0.0.0) やポート (5000) を変更したい場合は
+    環境変数 `JAGEOCODER_SERVER_HOST` および `JAGEOCODER_SERVER_PORT` を
+    指定して実行してください。
+
+        $ JAGEOCODER_SERVER_PORT=8000 python server/run_waitress.py
 
 - ブラウザで `http://<server>:5000/` にアクセスしてください。
+
+    ポートを変更した場合はそのポート番号を指定してください。
 
 - 作業が終わったらサーバを停止します。
 
@@ -88,13 +118,12 @@
 
 ## ライセンス
 
-このプログラムは [the MIT License](https://opensource.org/licenses/mit-license.php)
-に従って自由にインストール・利用が可能です。
+* このプログラムは [the MIT License](https://opensource.org/licenses/mit-license.php)
+  に従って自由にインストール・利用が可能です。
 
-ただし住所データベースについては、データ提供元による利用条件があります。
+* ただし住所データベースについては、データ提供元による利用条件があります。
 
 ## 関連情報
 
-ジオコーダー jageocoder および住所データベースについては
-https://t-sagara.github.io/jageocoder/
-から参照してください。
+* ジオコーダー jageocoder および住所データベースについては
+  https://t-sagara.github.io/jageocoder/ を参照してください。

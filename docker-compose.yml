@@ -5,8 +5,6 @@ services:
     container_name: jageocoder-server
     build:
       dockerfile: Dockerfile
-      args:
-        - DICFILE=jukyo_all_v20.zip
     shm_size: 512m
     volumes:
       - type: volume

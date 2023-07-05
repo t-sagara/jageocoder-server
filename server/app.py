@@ -2,6 +2,7 @@ import json
 from typing import List
 import os
 import re
+import urllib
 
 from flask_cors import cross_origin
 from flask import Flask, flash, request, render_template, jsonify, Response
@@ -178,7 +179,7 @@ def csvmatch():
         res = Response(csvmatch.geocoding_request_csv(args, buf))
         res.content_type = f"text/csv; charset={args['oenc']}"
         res.headers["Content-Disposition"] = \
-            f"attachment; filename={args['filename']}"
+            "attachment; filename={}".format(urllib.parse.quote(args['filename']))
         return res
     except RuntimeError as e:
         flash("送信データの解析に失敗しました。エラー: {}".format(e))

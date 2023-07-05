@@ -29,6 +29,20 @@ output_columns = (
     ("abrid", ["ABR町字ID", False]),
 )
 
+re_csvline = re.compile(
+    r'((\,|\r?\n|\r|^)(?:"([^"]*(?:""[^"]*)*)"|([^"\,\r\n]*)))+',
+    re.MULTILINE | re.DOTALL)
+
+
+def _validate_line_as_csv(line: str) -> bool:
+    """
+    Validate a line string is complete csv or not.
+    """
+    if re_csvline.fullmatch(line):
+        return True
+
+    return False
+
 
 def _get_nodes_list_by_level(node: jageocoder.node.AddressNode):
     """
@@ -238,7 +252,7 @@ def check_params(args, chunk):
             '%Y%m%d_%H%M%S.csv')
 
     # Detect input file encoding
-    buffer = chunk
+    buffer = chunk + b'\n'
     if args['ienc'] == 'auto':
         for i in range(0, 10):
             result = charset_normalizer.detect(chunk)
@@ -257,8 +271,9 @@ def check_params(args, chunk):
 
     # Get header line
     if args['head'] == '1':
-        if len(buffer) == 0:
-            buffer = request.stream.readline()
+        while len(buffer) == 0 or _validate_line_as_csv(
+                buffer.decode(args['ienc'])) is False:
+            buffer += request.stream.readline()
 
         # Get header columns
         reader = csv.reader(
