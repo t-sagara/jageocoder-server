@@ -9,6 +9,7 @@ WORKDIR /app
 # Install the required Python packages.
 # Note: CMake is needed for building pycapnp package.
 COPY ./requirements.txt /tmp/
+RUN apk add --no-cache libstdc++-dev
 RUN apk add --no-cache --virtual .pycapnp-builddeps linux-headers cmake make g++
 RUN --mount=type=cache,target=/root/.cache/pip \
     python3 -m pip install -r /tmp/requirements.txt

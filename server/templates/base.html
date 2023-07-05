@@ -94,13 +94,13 @@
     </div>
 
     <div class="content" id="messages">
-      {% with messages = get_flashed_messages() %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <ul>
-            {% for message in messages %}
-              <li>{{ message }}</li>
-            {% endfor %}
-          </ul>
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">
+            {{ message }}
+            </div>
+          {% endfor %}
         {% endif %}
       {% endwith %}
     </div>

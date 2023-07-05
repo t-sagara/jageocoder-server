@@ -182,13 +182,15 @@ def csvmatch():
             "attachment; filename={}".format(urllib.parse.quote(args['filename']))
         return res
     except RuntimeError as e:
-        flash("送信データの解析に失敗しました。エラー: {}".format(e))
+        flash(
+            "送信データの解析に失敗しました。エラー: {}".format(e),
+            'danger')
         return render_template(
             'csv.html',
             columns=csvmatch.output_columns,
             args=input_args)
     except ValueError as e:
-        flash("パラメータが正しくありません： {}".format(e))
+        flash("パラメータが正しくありません： {}".format(e), 'danger')
         return render_template(
             'csv.html',
             columns=csvmatch.output_columns,
