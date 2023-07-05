@@ -9,6 +9,8 @@ from flask import request, stream_with_context
 import jageocoder
 from jageocoder.address import AddressLevel
 
+MAX_READLINE_BYTES = 4096
+
 output_columns = (
     ("ofmtd", ["正規化住所", True]),
     ("ox", ["経度", True]),
@@ -194,7 +196,7 @@ def parse_multipart_formdata():
     name = None
     args = {"boundary": boundary}
     while True:
-        chunk = request.stream.readline()
+        chunk = request.stream.readline(MAX_READLINE_BYTES)
         if len(chunk) == 0:
             break
 
@@ -260,10 +262,14 @@ def check_params(args, chunk):
                 args['ienc'] = result['encoding']
                 break
 
-            chunk = request.stream.readline()
+            chunk = request.stream.readline(MAX_READLINE_BYTES)
             buffer += chunk
         else:
-            args['ienc'] = 'utf-8'
+            args['ienc'] = ""
+
+        if args['ienc'].lower() not in (
+                'ascii', 'cp932', 'euc_jp', 'latin_1', 'shift_jis'):
+            raise ValueError("文字エンコーディングが判定できません。")
 
     # Set output file encoding
     if args['oenc'] == 'auto':
@@ -273,7 +279,9 @@ def check_params(args, chunk):
     if args['head'] == '1':
         while len(buffer) == 0 or _validate_line_as_csv(
                 buffer.decode(args['ienc'])) is False:
-            buffer += request.stream.readline()
+            buffer += request.stream.readline(MAX_READLINE_BYTES)
+            if len(buffer) > MAX_READLINE_BYTES:
+                raise csv.Error("This file is not a CSV.")
 
         # Get header columns
         reader = csv.reader(

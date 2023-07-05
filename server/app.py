@@ -1,3 +1,4 @@
+import csv
 import json
 from typing import List
 import os
@@ -179,18 +180,22 @@ def csvmatch():
         res = Response(csvmatch.geocoding_request_csv(args, buf))
         res.content_type = f"text/csv; charset={args['oenc']}"
         res.headers["Content-Disposition"] = \
-            "attachment; filename={}".format(urllib.parse.quote(args['filename']))
+            "attachment; filename={}".format(
+                urllib.parse.quote(args['filename']))
         return res
+    except ValueError as e:
+        flash("パラメータが正しくありません： {}".format(e), 'danger')
+    except UnicodeEncodeError:
+        flash("入力文字エンコーディングを確認してください。")
+    except csv.Error:
+        flash(
+            f"ファイル '{args['filename']}' をCSVとして解析できませんでした。",
+            "danger")
     except RuntimeError as e:
         flash(
             "送信データの解析に失敗しました。エラー: {}".format(e),
             'danger')
-        return render_template(
-            'csv.html',
-            columns=csvmatch.output_columns,
-            args=input_args)
-    except ValueError as e:
-        flash("パラメータが正しくありません： {}".format(e), 'danger')
+    finally:
         return render_template(
             'csv.html',
             columns=csvmatch.output_columns,
@@ -208,9 +213,9 @@ def license():
 @app.route("/webapi")
 def webapi():
     jageocoder.set_search_config(
-            best_only=True,
-            target_area=["東京都"],
-            aza_skip=None)
+        best_only=True,
+        target_area=["東京都"],
+        aza_skip=None)
     geocoding_result = json.dumps(
         [x.as_dict() for x in jageocoder.searchNode('西新宿2丁目8-1')],
         indent=2, ensure_ascii=False)
