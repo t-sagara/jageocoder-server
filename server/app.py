@@ -186,7 +186,11 @@ def csvmatch():
     except ValueError as e:
         flash("パラメータが正しくありません： {}".format(e), 'danger')
     except UnicodeEncodeError:
-        flash("入力文字エンコーディングを確認してください。")
+        flash((
+            "入力文字エンコーディングの自動認識に失敗したか、"
+            "指定されたエンコーディングで変換できませんでした。"
+            "オプション項目で正しいエンコーディングを指定してください。"
+        ))
     except csv.Error:
         flash(
             f"ファイル '{args['filename']}' をCSVとして解析できませんでした。",
@@ -195,11 +199,8 @@ def csvmatch():
         flash(
             "送信データの解析に失敗しました。エラー: {}".format(e),
             'danger')
-    finally:
-        return render_template(
-            'csv.html',
-            columns=csvmatch.output_columns,
-            args=input_args)
+
+    return csvmatch.return_error_response(input_args)
 
 
 @app.route("/license")

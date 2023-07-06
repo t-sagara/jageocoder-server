@@ -1,14 +1,17 @@
 import csv
 import datetime
 import io
+from logging import getLogger
 import re
 
 import charset_normalizer
-from flask import request, stream_with_context
+from flask import render_template, request, stream_with_context
 
 import jageocoder
 from jageocoder.address import AddressLevel
 
+
+logger = getLogger(__name__)
 MAX_READLINE_BYTES = 4096
 
 output_columns = (
@@ -365,3 +368,25 @@ def geocoding_request_csv(args, buffer):
 
     request.stream.read()
     return
+
+
+def return_error_response(input_args):
+    """
+    Return rendered respons for error.
+
+    Note
+    ----
+    This method must not be with the streaming context.
+    """
+    d = True
+    while d:
+        # Consume all incomming stream...
+        # There should be other way to close the socket.
+        d = request.stream.read(MAX_READLINE_BYTES * 16)
+        logger.debug("Read {} bytes.".format(len(d)))
+
+    request.close()
+    return render_template(
+        'csv.html',
+        columns=output_columns,
+        args=input_args)
