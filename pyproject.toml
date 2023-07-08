@@ -8,12 +8,13 @@ license = "The MIT License"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 jageocoder = "^2.0.1"
 charset-normalizer = "^3.1.0"
 flask-cors = "^3.0.10"
 flask = "^2.2.5"
 waitress = "^2.1.2"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^5.0.0"

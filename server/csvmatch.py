@@ -316,19 +316,23 @@ def check_params(args, chunk):
 
     args['cols'] = cols
 
+    # Validate target area
+    try:
+        jageocoder.set_search_config(
+            best_only=True,
+            aza_skip=None,
+            require_coordinates=args['nc'] != '1',
+            target_area=args["area"],
+        )
+    except RuntimeError:
+        raise ValueError('対象地域が住所データベースにありません。')
+
     return args, buffer
 
 
 @stream_with_context
 def geocoding_request_csv(args, buffer):
     # Geocoding csv file
-    jageocoder.set_search_config(
-        best_only=True,
-        aza_skip=None,
-        require_coordinates=args['nc'] != '1',
-        target_area=args["area"],
-    )
-
     boundary = args['boundary'].decode(args['ienc'])
     output = io.StringIO()
     writer = csv.writer(output)
