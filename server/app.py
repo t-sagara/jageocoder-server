@@ -38,6 +38,8 @@ def inject_versions():
         "module_version": module_version,
         "dictionary_version": dictionary_version,
         "SITE_MESSAGE": os.environ.get("SITE_MESSAGE"),
+        "LAN_MODE": os.environ.get(
+            "LAN_MODE", "0"),
     }
 
 
@@ -224,6 +226,7 @@ def license():
 
 @app.route("/webapi")
 def webapi():
+    root_url = request.url.replace(url_for('webapi'), '')
     jageocoder.set_search_config(
         best_only=True,
         target_area=["東京都"],
@@ -231,12 +234,12 @@ def webapi():
     geocoding_result = json.dumps(
         [x.as_dict() for x in jageocoder.searchNode('西新宿2丁目8-1')],
         indent=2, ensure_ascii=False)
-    geocoding_api_url = os.environ.get('SITE_ROOT_URL', '') + url_for(
+    geocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
         'geocode', addr='西新宿2丁目8-1', area='東京都')
     rgeocoding_result = json.dumps(
         jageocoder.reverse(x=139.69175, y=35.689472, level=7),
         indent=2, ensure_ascii=False)
-    rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', '') + url_for(
+    rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
         'reverse_geocode', lat=35.689472, lon=139.69175, level=7)
     return render_template(
         'webapi.html',

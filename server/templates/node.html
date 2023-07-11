@@ -21,8 +21,14 @@
   <li>経度: {{ node.x }}, 緯度: {{ node.y }}</li>
   <li>住所レベル: {{ node.level }}</li>
   <li>データセット優先度: {{ node.priority }}</li>
-  <li>データセット: <a href="{{ node.dataset.url }}" target="_blank">
-      {{ node.dataset.title }}</a></li>
+  <li>データセット:
+  {% if LAN_MODE != '1' %}
+    <a href="{{ node.dataset.url }}" target="_blank">
+      {{ node.dataset.title }}</a>
+  {% else %}
+    {{ node.dataset.title }}
+  {% endif %}
+  </li>
   <li>追加情報: {{ node.note }}</li>
 </ul>
 
@@ -30,10 +36,18 @@
 <ul id="methods">
   <li>正規化住所表記: {{ ' '.join(node.get_fullname()) }}</li>
   <li>地理院地図リンク:
-    <a href="{{ node.get_gsimap_link() }}" target="_gsimap">{{ node.get_gsimap_link() }}</a>
+    {% if LAN_MODE != '1' %}
+      <a href="{{ node.get_gsimap_link() }}" target="_gsimap">{{ node.get_gsimap_link() }}</a>
+    {% else %}
+      {{ node.get_gsimap_link() }}
+    {% endif %}
   </li>
   <li>Google地図リンク:
-    <a href="{{ node.get_googlemap_link() }}" target="_googlemap">{{ node.get_googlemap_link() }}</a>
+    {% if LAN_MODE != '1' %}
+      <a href="{{ node.get_googlemap_link() }}" target="_googlemap">{{ node.get_googlemap_link() }}</a>
+    {% else %}
+      {{ node.get_googlemap_link() }}
+    {% endif %}
   </li>
   <li>都道府県名: {{ node.get_pref_name() }}</li>
   <li>都道府県コード:
