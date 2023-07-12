@@ -7,7 +7,7 @@
 <p>住所を検索して緯度経度などの情報を取得します。</p>
 <h2>リクエスト例</h2>
 <p>例：<code>西新宿2丁目8-1</code>を<code>東京都</code>から検索</p>
-<pre>GET {{ url_for('geocode', addr='西新宿2丁目8-1', area='東京都', _external=True) }}</pre>
+<pre>GET <a href="{{ geocoding_api_url }}" target="_blank">{{ geocoding_api_url }}</a></pre>
 <h2>リクエスト項目</h2>
 HTTP method は GET または POST が利用できます。
 <ul>
@@ -76,7 +76,7 @@ HTTP method は GET または POST が利用できます。
 半島の先端や住所ノードがまばらな場合など、3点が見つからない場合もあります。</p>
 <h2>リクエスト例</h2>
 <p>例：<code>北緯35.689472度, 東経139.69175度</code>を街区レベル(<code>7</code>)まで検索</p>
-<pre>GET {{ url_for('reverse_geocode', lat=35.689472, lon=139.69175, level=7, _external=True) }}</pre>
+<pre>GET <a href="{{ rgeocoding_api_url }}" target="_blank">{{ rgeocoding_api_url }}</a></pre>
 <h2>リクエスト項目</h2>
 HTTP method は GET または POST が利用できます。
 <ul>
