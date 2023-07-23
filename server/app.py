@@ -53,10 +53,14 @@ def _split_args(val: str) -> List[str]:
 def index():
     query = request.args.get('q', '')
     skip_aza = request.args.get('skip_aza', 'auto')
+    req_coords = request.args.get('req_coords', 'on')
+    best_only = request.args.get('best_only', 'on')
     area = request.args.get('area', '')
     return render_template(
         'index.html',
         skip_aza=skip_aza,
+        req_coords=req_coords,
+        best_only=best_only,
         area=area,
         q=query,
         result=None)
@@ -255,10 +259,13 @@ def search():
     query = request.args.get('q')
     area = request.args.get('area', '')
     skip_aza = request.args.get('skip_aza', 'auto')
+    req_coords = request.args.get('req_coords', 'on')
+    best_only = request.args.get('best_only', 'on')
     if query:
         jageocoder.set_search_config(
-            best_only=True,
             aza_skip=skip_aza,
+            require_coordinates=(req_coords == 'on'),
+            best_only=(best_only == 'on'),
             target_area=_split_args(area))
         results = jageocoder.searchNode(query=query)
     else:
@@ -267,6 +274,8 @@ def search():
     return render_template(
         'index.html',
         skip_aza=skip_aza,
+        req_coords=req_coords,
+        best_only=best_only,
         area=area,
         q=query, results=results)
 
