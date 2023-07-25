@@ -241,15 +241,16 @@ def webapi():
         indent=2, ensure_ascii=False)
     geocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
         'geocode', addr='西新宿2丁目8-1', area='東京都')
-    if os.environ.get('BUILD_RTREE', None):
+    if str(os.environ.get('BUILD_RTREE', 0)).lower() in (
+            '0', 'none', 'false', 'no', 'off'):
+        rgeocoding_result = ""
+        rgeocoding_api_url = "このサーバでは利用できません"
+    else:
         rgeocoding_result = json.dumps(
             jageocoder.reverse(x=139.69175, y=35.689472, level=7),
             indent=2, ensure_ascii=False)
         rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
             'reverse_geocode', lat=35.689472, lon=139.69175, level=7)
-    else:
-        rgeocoding_result = ""
-        rgeocoding_api_url = "このサーバでは利用できません"
 
     return render_template(
         'webapi.html',
@@ -331,7 +332,8 @@ def geocode():
 @app.route("/rgeocode", methods=['POST', 'GET'])
 @cross_origin()
 def reverse_geocode():
-    if not os.environ.get('BUILD_RTREE', None):
+    if str(os.environ.get('BUILD_RTREE', 0)).lower() in (
+            '0', 'none', 'false', 'no', 'off'):
         return "'rgeocode' is not available on this server.", 400
 
     if request.method == 'GET':
