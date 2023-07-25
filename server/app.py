@@ -9,7 +9,8 @@ import urllib
 
 import dotenv
 from flask_cors import cross_origin
-from flask import Flask, flash, request, render_template, jsonify, Response, url_for
+from flask import Flask, flash, request, render_template, jsonify, \
+    Response, url_for
 
 import jageocoder
 from jageocoder.address import AddressLevel
@@ -27,6 +28,12 @@ envpath = Path(__file__).parent / 'secret/.env'
 if envpath.exists:
     dotenv.load_dotenv(envpath)
 
+tree_dir = Path(jageocoder.get_module_tree().db_dir)
+if (tree_dir / "rtree.dat").exists() and \
+        (tree_dir / "rtree.idx").exists():
+    use_rgeocoder = True
+else:
+    use_rgeocoder = False
 
 re_splitter = re.compile(r'[ \u2000,、]+')
 
@@ -53,10 +60,14 @@ def _split_args(val: str) -> List[str]:
 def index():
     query = request.args.get('q', '')
     skip_aza = request.args.get('skip_aza', 'auto')
+    req_coords = request.args.get('req_coords', 'on')
+    best_only = request.args.get('best_only', 'on')
     area = request.args.get('area', '')
     return render_template(
         'index.html',
         skip_aza=skip_aza,
+        req_coords=req_coords,
+        best_only=best_only,
         area=area,
         q=query,
         result=None)
@@ -236,11 +247,17 @@ def webapi():
         indent=2, ensure_ascii=False)
     geocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
         'geocode', addr='西新宿2丁目8-1', area='東京都')
-    rgeocoding_result = json.dumps(
-        jageocoder.reverse(x=139.69175, y=35.689472, level=7),
-        indent=2, ensure_ascii=False)
-    rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
-        'reverse_geocode', lat=35.689472, lon=139.69175, level=7)
+    if use_rgeocoder:
+        rgeocoding_result = json.dumps(
+            jageocoder.reverse(x=139.69175, y=35.689472, level=7),
+            indent=2, ensure_ascii=False)
+        rgeocoding_api_url = os.environ.get(
+            'SITE_ROOT_URL', root_url) + url_for(
+            'reverse_geocode', lat=35.689472, lon=139.69175, level=7)
+    else:
+        rgeocoding_result = ""
+        rgeocoding_api_url = "（このサーバでは利用できません）"
+
     return render_template(
         'webapi.html',
         geocoding_result=geocoding_result,
@@ -255,10 +272,13 @@ def search():
     query = request.args.get('q')
     area = request.args.get('area', '')
     skip_aza = request.args.get('skip_aza', 'auto')
+    req_coords = request.args.get('req_coords', 'on')
+    best_only = request.args.get('best_only', 'on')
     if query:
         jageocoder.set_search_config(
-            best_only=True,
             aza_skip=skip_aza,
+            require_coordinates=(req_coords == 'on'),
+            best_only=(best_only == 'on'),
             target_area=_split_args(area))
         results = jageocoder.searchNode(query=query)
     else:
@@ -267,6 +287,8 @@ def search():
     return render_template(
         'index.html',
         skip_aza=skip_aza,
+        req_coords=req_coords,
+        best_only=best_only,
         area=area,
         q=query, results=results)
 
@@ -316,6 +338,9 @@ def geocode():
 @app.route("/rgeocode", methods=['POST', 'GET'])
 @cross_origin()
 def reverse_geocode():
+    if not use_rgeocoder:
+        return "'rgeocode' is not available on this server.", 400
+
     if request.method == 'GET':
         lat = request.args.get('lat')
         lon = request.args.get('lon')

@@ -267,14 +267,14 @@ files = [
 
 [[package]]
 name = "jageocoder"
-version = "2.0.2"
+version = "2.0.3"
 description = "A Japanese-address geocoder for Python."
 category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "jageocoder-2.0.2-py3-none-any.whl", hash = "sha256:66f5b7b8babe28f178cc93873f47e4a6e88326244e340d0fbcb2c983586ab24c"},
-    {file = "jageocoder-2.0.2.tar.gz", hash = "sha256:05141715df76ea7c4e27e0e035ae996b6e19b4bc13cb5d23de99436c43226a46"},
+    {file = "jageocoder-2.0.3-py3-none-any.whl", hash = "sha256:d9b6c192da9aeeb8bce026f569e01104254356df0f4066274977ce84471482ac"},
+    {file = "jageocoder-2.0.3.tar.gz", hash = "sha256:3c56c7df649e9f39bd04e2581db2d849674cc1c713ce304d09618cdaec373e7b"},
 ]
 
 [package.dependencies]
@@ -798,4 +798,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "ae1362941d099ed1a3b6dd85aee1ae40d93560a187310146c12f9d1149bacf9f"
+content-hash = "ecd0666a6deb5b1ada82cf10ecd077de9a150376c00aa5bccf265523889f8e21"

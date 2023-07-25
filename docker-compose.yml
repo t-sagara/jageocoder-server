@@ -15,6 +15,10 @@ services:
         target: /data
     ports:
       - 5000:5000
+    environment:
+      - SITE_MESSAGE=
+      - LAN_MODE=0
+      - BUILD_RTREE=0
 
 volumes:
   jageocoder-server-db: {}
