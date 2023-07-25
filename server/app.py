@@ -28,6 +28,12 @@ envpath = Path(__file__).parent / 'secret/.env'
 if envpath.exists:
     dotenv.load_dotenv(envpath)
 
+tree_dir = Path(jageocoder.get_module_tree().db_dir)
+if (tree_dir / "rtree.dat").exists() and \
+        (tree_dir / "rtree.idx").exists():
+    use_rgeocoder = True
+else:
+    use_rgeocoder = False
 
 re_splitter = re.compile(r'[ \u2000,、]+')
 
@@ -241,16 +247,16 @@ def webapi():
         indent=2, ensure_ascii=False)
     geocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
         'geocode', addr='西新宿2丁目8-1', area='東京都')
-    if str(os.environ.get('BUILD_RTREE', 0)).lower() in (
-            '0', 'none', 'false', 'no', 'off'):
-        rgeocoding_result = ""
-        rgeocoding_api_url = "このサーバでは利用できません"
-    else:
+    if use_rgeocoder:
         rgeocoding_result = json.dumps(
             jageocoder.reverse(x=139.69175, y=35.689472, level=7),
             indent=2, ensure_ascii=False)
-        rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
+        rgeocoding_api_url = os.environ.get(
+            'SITE_ROOT_URL', root_url) + url_for(
             'reverse_geocode', lat=35.689472, lon=139.69175, level=7)
+    else:
+        rgeocoding_result = ""
+        rgeocoding_api_url = "（このサーバでは利用できません）"
 
     return render_template(
         'webapi.html',
@@ -332,8 +338,7 @@ def geocode():
 @app.route("/rgeocode", methods=['POST', 'GET'])
 @cross_origin()
 def reverse_geocode():
-    if str(os.environ.get('BUILD_RTREE', 0)).lower() in (
-            '0', 'none', 'false', 'no', 'off'):
+    if not use_rgeocoder:
         return "'rgeocode' is not available on this server.", 400
 
     if request.method == 'GET':
