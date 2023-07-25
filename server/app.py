@@ -9,7 +9,8 @@ import urllib
 
 import dotenv
 from flask_cors import cross_origin
-from flask import Flask, flash, request, render_template, jsonify, Response, url_for
+from flask import Flask, flash, request, render_template, jsonify, \
+    Response, url_for
 
 import jageocoder
 from jageocoder.address import AddressLevel
@@ -240,11 +241,16 @@ def webapi():
         indent=2, ensure_ascii=False)
     geocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
         'geocode', addr='西新宿2丁目8-1', area='東京都')
-    rgeocoding_result = json.dumps(
-        jageocoder.reverse(x=139.69175, y=35.689472, level=7),
-        indent=2, ensure_ascii=False)
-    rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
-        'reverse_geocode', lat=35.689472, lon=139.69175, level=7)
+    if os.environ.get('BUILD_RTREE', None):
+        rgeocoding_result = json.dumps(
+            jageocoder.reverse(x=139.69175, y=35.689472, level=7),
+            indent=2, ensure_ascii=False)
+        rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
+            'reverse_geocode', lat=35.689472, lon=139.69175, level=7)
+    else:
+        rgeocoding_result = ""
+        rgeocoding_api_url = "このサーバでは利用できません"
+
     return render_template(
         'webapi.html',
         geocoding_result=geocoding_result,
@@ -325,6 +331,9 @@ def geocode():
 @app.route("/rgeocode", methods=['POST', 'GET'])
 @cross_origin()
 def reverse_geocode():
+    if not os.environ.get('BUILD_RTREE', None):
+        return "'rgeocode' is not available on this server.", 400
+
     if request.method == 'GET':
         lat = request.args.get('lat')
         lon = request.args.get('lon')

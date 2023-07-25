@@ -32,6 +32,7 @@ output_columns = (
     ("citycode", ["市区町村コード", False]),
     ("municode", ["地方公共団体コード", False]),
     ("abrid", ["ABR町字ID", False]),
+    ("oalt", ["他の候補", False]),
 )
 
 re_csvline = re.compile(
@@ -170,6 +171,19 @@ def _geocode_row(row, args, boundary):
                     newrow.append(node.get_city_local_authority_code())
                 elif oc[0] == 'abrid':
                     newrow.append(node.get_aza_id())
+                elif oc[0] == 'oalt':
+                    if len(results) == 1:
+                        newrow.append('')
+                    else:
+                        best = ''.join(node.get_fullname())
+                        for r in results[1:]:
+                            fullname = ''.join(r.node.get_fullname())
+                            if fullname != best:
+                                newrow.append(fullname)
+                                break
+                        else:
+                            newrow.append('')
+
                 else:
                     raise ValueError(f"不明なパラメータ '{oc[0]}'")
 

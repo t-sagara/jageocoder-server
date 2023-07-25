@@ -15,6 +15,10 @@ services:
         target: /data
     ports:
       - 5000:5000
+    environment:
+      - LAN_MODE=1
+      - SITE_MESSAGE="8/14の週はシステムを停止します"
+      - BUILD_RTREE=0
 
 volumes:
   jageocoder-server-db: {}
