@@ -62,12 +62,14 @@ def index():
     skip_aza = request.args.get('skip_aza', 'auto')
     req_coords = request.args.get('req_coords', 'on')
     best_only = request.args.get('best_only', 'on')
+    auto_redirect = request.args.get('auto_redirect', 'on')
     area = request.args.get('area', '')
     return render_template(
         'index.html',
         skip_aza=skip_aza,
         req_coords=req_coords,
         best_only=best_only,
+        auto_redirect=auto_redirect,
         area=area,
         q=query,
         result=None)
@@ -241,7 +243,9 @@ def webapi():
     jageocoder.set_search_config(
         best_only=True,
         target_area=["東京都"],
-        aza_skip=None)
+        aza_skip=None,
+        auto_redirect=True,
+    )
     geocoding_result = json.dumps(
         [x.as_dict() for x in jageocoder.searchNode('西新宿2丁目8-1')],
         indent=2, ensure_ascii=False)
@@ -274,12 +278,15 @@ def search():
     skip_aza = request.args.get('skip_aza', 'auto')
     req_coords = request.args.get('req_coords', 'on')
     best_only = request.args.get('best_only', 'on')
+    auto_redirect = request.args.get('auto_redirect', 'on')
     if query:
         jageocoder.set_search_config(
             aza_skip=skip_aza,
             require_coordinates=(req_coords == 'on'),
             best_only=(best_only == 'on'),
-            target_area=_split_args(area))
+            auto_redirect=(auto_redirect == 'on'),
+            target_area=_split_args(area),
+        )
         results = jageocoder.searchNode(query=query)
     else:
         results = None
@@ -289,6 +296,7 @@ def search():
         skip_aza=skip_aza,
         req_coords=req_coords,
         best_only=best_only,
+        auto_redirect=auto_redirect,
         area=area,
         q=query, results=results)
 

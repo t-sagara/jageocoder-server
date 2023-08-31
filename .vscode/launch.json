@@ -17,7 +17,8 @@
             "module": "flask",
             "env": {
                 "FLASK_APP": "app.py",
-                "FLASK_DEBUG": "1"
+                "FLASK_DEBUG": "1",
+                "JAGEOCODER_DB2_DIR": "/home/sagara/github/jageocoder-converter/db",
             },
             "args": [
                 "run",
