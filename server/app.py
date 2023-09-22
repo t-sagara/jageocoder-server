@@ -10,7 +10,7 @@ import urllib
 import dotenv
 from flask_cors import cross_origin
 from flask import Flask, flash, request, render_template, jsonify, \
-    Response, url_for
+    Response, url_for, make_response
 
 import jageocoder
 from jageocoder.address import AddressLevel
@@ -58,21 +58,13 @@ def _split_args(val: str) -> List[str]:
 
 @app.route("/")
 def index():
-    query = request.args.get('q', '')
-    skip_aza = request.args.get('skip_aza', 'auto')
-    req_coords = request.args.get('req_coords', 'on')
-    best_only = request.args.get('best_only', 'on')
-    auto_redirect = request.args.get('auto_redirect', 'on')
-    area = request.args.get('area', '')
-    return render_template(
+    options = get_query_options(request)
+    response = make_response(render_template(
         'index.html',
-        skip_aza=skip_aza,
-        req_coords=req_coords,
-        best_only=best_only,
-        auto_redirect=auto_redirect,
-        area=area,
-        q=query,
-        result=None)
+        **options,
+        result=None
+    ))
+    return set_query_options(response, options)
 
 
 @app.route("/azamaster/<code>", methods=['POST', 'GET'])
@@ -273,49 +265,40 @@ def webapi():
 
 @app.route("/search", methods=['POST', 'GET'])
 def search():
-    query = request.args.get('q')
-    area = request.args.get('area', '')
-    skip_aza = request.args.get('skip_aza', 'auto')
-    req_coords = request.args.get('req_coords', 'on')
-    best_only = request.args.get('best_only', 'on')
-    auto_redirect = request.args.get('auto_redirect', 'on')
-    if query:
+    options = get_query_options(request)
+    if options['q']:
         jageocoder.set_search_config(
-            aza_skip=skip_aza,
-            require_coordinates=(req_coords == 'on'),
-            best_only=(best_only == 'on'),
-            auto_redirect=(auto_redirect == 'on'),
-            target_area=_split_args(area),
+            aza_skip=options['skip_aza'],
+            require_coordinates=(options['req_coords'] == 'on'),
+            best_only=(options['best_only'] == 'on'),
+            auto_redirect=(options['auto_redirect'] == 'on'),
+            target_area=_split_args(options['area']),
         )
-        results = jageocoder.searchNode(query=query)
+        results = jageocoder.searchNode(query=options['q'])
     else:
         results = None
 
-    return render_template(
+    response = make_response(render_template(
         'index.html',
-        skip_aza=skip_aza,
-        req_coords=req_coords,
-        best_only=best_only,
-        auto_redirect=auto_redirect,
-        area=area,
-        q=query, results=results)
+        **options,
+        results=results,
+    ))
+    return set_query_options(response, options)
 
 
 @app.route("/node/<id>", methods=['POST', 'GET'])
 def show_node(id):
     tree = jageocoder.get_module_tree()
     node = tree.get_node_by_id(int(id))
-    query = request.args.get('q', '')
-    area = request.args.get('area', '')
-    skip_aza = request.args.get('skip_aza', 'auto')
+    options = get_query_options(request)
 
-    return render_template(
+    response = make_response(render_template(
         'node.html',
-        skip_aza=skip_aza,
-        area=area,
-        q=query,
         tree=tree,
-        node=node)
+        node=node,
+        **options,
+    ))
+    return set_query_options(response, options)
 
 
 @app.route("/geocode", methods=['POST', 'GET'])
@@ -333,10 +316,10 @@ def geocode():
     if query:
         jageocoder.set_search_config(
             best_only=True,
+            auto_redirect=True,
             target_area=_split_args(area),
             aza_skip=skip_aza)
-        results = jageocoder.searchNode(
-            query=query)
+        results = jageocoder.searchNode(query=query)
     else:
         return "'addr' is required.", 400
 
@@ -367,3 +350,32 @@ def reverse_geocode():
         return "'lat' and 'lon' are required.", 400
 
     return jsonify(results), 200
+
+
+def get_query_options(request) -> None:
+    defaults = {
+        'q': '',
+        'area': '',
+        'auto_redirect': 'on',
+        'skip_aza': 'auto',
+        'req_coords': 'on',
+        'best_only': 'on',
+    }
+    options = {}
+    for opt in defaults.keys():
+        options[opt] = request.args.get(
+            opt,
+            request.cookies.get(opt, defaults[opt])
+        )
+
+    return options
+
+
+def set_query_options(
+    response: Response,
+    options: dict
+) -> Response:
+    for key, value in options.items():
+        response.set_cookie(key, value)
+
+    return response
