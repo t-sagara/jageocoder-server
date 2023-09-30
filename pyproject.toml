@@ -9,7 +9,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-jageocoder = ">=2.1.0"
+jageocoder = "2.1.0.post1"
 charset-normalizer = "^3.1.0"
 flask-cors = "^3.0.10"
 flask = "^2.2.5"
