@@ -95,14 +95,20 @@
             </div>
             <div class="row">
               <div class="col-sm-12">
-                <div class="mb-3">
-                  <div><label for="outputcolumns" class="form-label">出力項目</label></div>
+                <div id="option_switches" class="mb-3">
+                  <div>
+                    <label for="outputcolumns" class="form-label">出力項目</label>
+                    <div class="form-check form-switch form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="switch_all">
+                      <label class="form-check-label" for="all">一括セット</label>
+                    </div>
+                  </div>
                   {% for col in columns: %}
                   <div class="form-check form-switch form-check-inline">
                     {% if col[0] in args %}
                       <input class="form-check-input" type="checkbox" id="{{ col[0] }}" name="{{ col[0] }}" checked="checked">
                     {% else %}
-                    <input class="form-check-input" type="checkbox" id="{{ col[0] }}" name="{{ col[0] }}">
+                      <input class="form-check-input" type="checkbox" id="{{ col[0] }}" name="{{ col[0] }}">
                     {% endif %}
                     <label class="form-check-label" for="{{ col[0] }}">{{ col[1][0] }}</label>
                   </div>
@@ -148,4 +154,19 @@
       </div>
     </div>
   </form>
+{% endblock %}
+
+{% block script %}
+<script>
+  let switch_all = document.getElementById('switch_all');
+  switch_all.checked = false;
+  switch_all.addEventListener('click', function() {
+    let is_checked = switch_all.checked;
+    for (element of document.querySelectorAll(
+        "#option_switches input[type=checkbox]")
+    ) {
+      element.checked = is_checked;
+    }
+  });
+</script>
 {% endblock %}
