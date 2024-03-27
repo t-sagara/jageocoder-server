@@ -21,7 +21,7 @@ dictionary_version = jageocoder.installed_dictionary_version()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
-app.config['JSON_AS_ASCII'] = False
+app.json.ensure_ascii = False
 
 # Load environment variables from ".env", if exists.
 envpath = Path(__file__).parent / 'secret/.env'
