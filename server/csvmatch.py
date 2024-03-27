@@ -270,6 +270,14 @@ def check_params(args, chunk):
         args['filename'] = datetime.datetime.now().strftime(
             '%Y%m%d_%H%M%S.csv')
 
+    # Confirm if one or more output columns are selected
+    for oc in output_columns:
+        if oc[0] in args:
+            break
+
+    else:
+        raise ValueError("出力項目を1つ以上選択してください。")
+
     # Detect input file encoding
     buffer = chunk + b'\n'
     if args['ienc'] == 'auto':

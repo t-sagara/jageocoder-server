@@ -14,39 +14,42 @@
 
 # 利用手順
 
-- [GitHub](https://github.com/t-sagara/jageocoder-server) から最新の
-  コードを clone, または ZIP ファイルをダウンロードしてください。
+- [GitHub](https://github.com/t-sagara/jageocoder-server) から
+    最新のコードを clone, または ZIP ファイルをダウンロードしてください。
 - 任意の場所に展開し、ターミナル (Windows の場合は PowerShell) で
-  この README.md ファイルがあるディレクトリを開いてください。
+    この README.md ファイルがあるディレクトリを開いてください。
 
 ## Docker を利用する場合
 
 - [Docker Engine](https://docs.docker.com/engine/) または
-  [Docker Desktop](https://www.docker.com/products/docker-desktop/) が必要です。
+    [Docker Desktop](https://www.docker.com/products/docker-desktop/) が必要です。
 
 - インストールする辞書をセットします。
 
     - [データファイル一覧](https://www.info-proto.com/static/jageocoder/latest/v2/)
-      からダウンロードし、`data/` に配置してください。
-    - data ディレクトリには他の zip ファイルは置かないでください。
+        からダウンロードし、`data/` に配置してください。
 
-- サーバ設定
+    - data ディレクトリの zip ファイルの中で、更新日時が最も新しいものがインストールされます。
 
-    `docker-compose.yml` の `environment:` 以下の行で
-    サーバの設定を行うことができます。
+- サーバ設定の設定を確認します。
+
+    `docker-compose.yml` の `environment:` 以下の行でサーバの設定を行うことができます。
 
     - `SITE_MESSAGE`: サーバに表示する文字列を設定できます。
+
     - `LAN_MODE`: 1 にすると、地図表示のために地理院地図サーバに
-      アクセスするといった外部ネットワークへの通信を行いません。
+        アクセスするといった外部ネットワークへの通信を行いません。
+
     - `BUILD_RTREE`: 1 にすると、リバースジオコーディング機能に
-      必要なインデックスを初回起動時に構築します。
+        必要なインデックスを初回起動時に構築します。
 
 - 以下の手順でコンテナを作成し、実行します。
 
         $ docker compose build
         $ docker compose up -d
 
-    初回インストール時には辞書のインストールを行います。
+    初回起動時、または新しい辞書ファイルが配置された場合には、
+    自動的に辞書のインストールを行います。
 
     所要時間は辞書のサイズやコンピュータの性能にもよりますが、
     たとえば全国の住居表示レベルの場合は 1 分間程度かかります。
@@ -54,8 +57,8 @@
     `BUILD_RTREE` を 1 にした場合、リバースジオコーディング用の
     R-tree インデックスも構築します。こちらは 10 分間以上かかります。
 
-    `data/init.log` に進捗状況が出力されますので、 `All done.` と
-    表示されるまでのんびりお待ちください。
+    `data/init.log` に進捗状況が出力されますので、
+    `Starting server process...` と表示されるまでのんびりお待ちください。
 
 - ブラウザで `http://localhost:5000/` にアクセスしてご利用ください。
 
@@ -68,9 +71,16 @@
 
         $ docker compose up -d
 
+- 辞書を更新するには、 `data/` に新しい辞書ファイルを置いてから、
+  コンテナを再起動してください。
+  
+        $ docker compose down
+        $ docker compose up -d
+
 - もう利用しない場合はアンインストールしてください。
 
-    完全にアンインストールするには Volume も削除してください。
+    完全にアンインストールするには `-v` オプションを指定して
+    辞書がインストールされている Volume も削除します。
 
         $ docker compose down -v
         $ docker system prune
@@ -95,18 +105,19 @@
     辞書がインストールされているディレクトリを環境変数 `JAGEOCODER_DB2_DIR` に
     セットしてください。
 
-    インストールされていない場合は [データファイル一覧](https://www.info-proto.com/static/jageocoder/latest/v2/)
+    インストールされていない場合や新しい辞書に更新したい場合は
+    [データファイル一覧](https://www.info-proto.com/static/jageocoder/latest/v2/)
     から適切なデータファイルをダウンロードして、次のコマンドでインストールしてください。
 
-        $ python -m jageocoder install-dictionary <データファイルzip>
+        $ jageocoder install-dictionary <データファイルzip>
         (例)
-        $ python -m jageocoder install-dictionary jukyo_all_v20.zip
+        $ jageocoder install-dictionary jukyo_all_v20.zip
 
     リバースジオコーディング機能を利用したい場合は、
     R-tree インデックスを構築しておく必要があります。
     以下のコマンドを実行してインデックスを構築してください。
 
-        $ python -m jageocoder reverse 140.0 35.0
+        $ jageocoder reverse 140.0 35.0
 
     サーバを起動中に R-tree インデックスを構築した場合、
     一度サーバを Ctrl+C で停止して、再度起動してください。

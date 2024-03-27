@@ -78,8 +78,7 @@
     {% if node.id == -1 %}
     無し
     {% else %}
-    <a href="{{ url_for('show_node',
-       id=node.parent_id, q=q, skip_aza=skip_aza, area=area) }}">
+    <a href="{{ url_for('show_node', id=node.parent_id) }}">
       {{ node.parent.name }}
     </a>
     {% endif %}
@@ -87,8 +86,7 @@
   <li>子ノード:
     {% if node.children|length > 0 %}
     {% for child in node.children %}
-    <a href="{{ url_for('show_node',
-        id=child.id, q=q, skip_aza=skip_aza, area=area) }}">
+    <a href="{{ url_for('show_node', id=child.id) }}">
       {{ child.name }}
     </a>&nbsp;
     {% endfor %}

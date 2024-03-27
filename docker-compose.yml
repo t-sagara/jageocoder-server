@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   jageocoder-server:
     container_name: jageocoder-server
