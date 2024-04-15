@@ -6,13 +6,14 @@ authors = ["Takeshi Sagara <sagara@info-proto.com>"]
 repository = "https://github.com/t-sagara/jageocoder-server/"
 license = "The MIT License"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.8"
 charset-normalizer = "^3.1.0"
 flask-cors = ">=3.0.0"
 flask = ">=2.2.5, <3.0"
-jageocoder = ">=2.0.0"
+jageocoder = "^2.1.4"
 python-dotenv = "^1.0.0"
 waitress = "^2.1.2"
 
