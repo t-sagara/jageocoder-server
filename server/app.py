@@ -336,18 +336,33 @@ def reverse_geocode():
         lat = request.args.get('lat')
         lon = request.args.get('lon')
         level = request.args.get('level', AddressLevel.AZA)
+        options = request.args.get('opts', '')
     else:
         lat = request.form.get('lat')
         lon = request.form.get('lon')
         level = request.form.get('level', AddressLevel.AZA)
+        options = request.form.get('opts', '')
 
     if lat and lon:
         results = jageocoder.reverse(
             x=float(lon),
             y=float(lat),
-            level=int(level))
+            level=int(level),
+            as_dict=False
+        )
     else:
         return "'lat' and 'lon' are required.", 400
+
+    options = options.split(",")
+    if "postcode" in options:
+        new_results = []
+        for result in results:
+            node = result["candidate"]
+            result["candidate"] = node.as_dict()
+            result["candidate"]["postcode"] = node.get_postcode()
+            new_results.append(result)
+
+        results = new_results
 
     return jsonify(results), 200
 
