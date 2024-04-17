@@ -1,6 +1,6 @@
 charset-normalizer==3.3.2
 Flask==2.3.3
 Flask-Cors==4.0.0
-jageocoder==2.1.4
+jageocoder==2.1.5.post1
 python-dotenv==1.0.1
 waitress==2.1.2

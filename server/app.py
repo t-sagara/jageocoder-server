@@ -14,6 +14,7 @@ from flask import Flask, flash, request, render_template, jsonify, \
 
 import jageocoder
 from jageocoder.address import AddressLevel
+from jageocoder.node import AddressNode
 
 jageocoder.init()
 module_version = jageocoder.__version__
@@ -232,24 +233,28 @@ def license():
 @app.route("/webapi")
 def webapi():
     root_url = request.url.replace(url_for('webapi'), '')
-    jageocoder.set_search_config(
-        best_only=True,
-        target_area=["東京都"],
-        aza_skip=None,
-        auto_redirect=True,
-    )
-    geocoding_result = json.dumps(
-        [x.as_dict() for x in jageocoder.searchNode('西新宿2丁目8-1')],
-        indent=2, ensure_ascii=False)
-    geocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url_for(
-        'geocode', addr='西新宿2丁目8-1', area='東京都')
+    url = url_for('geocode', addr='西新宿2丁目8-1', area='東京都', opts='all')
+    geocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url
+    with app.test_request_context(url):
+        res = app.dispatch_request()
+        geocoding_result = json.dumps(
+            json.loads(res.get_data(as_text=True)),
+            indent=2,
+            ensure_ascii=False,
+        )
+
     if use_rgeocoder:
-        rgeocoding_result = json.dumps(
-            jageocoder.reverse(x=139.69175, y=35.689472, level=7),
-            indent=2, ensure_ascii=False)
-        rgeocoding_api_url = os.environ.get(
-            'SITE_ROOT_URL', root_url) + url_for(
-            'reverse_geocode', lat=35.689472, lon=139.69175, level=7)
+        url = url_for('reverse_geocode', lat=35.689472,
+                      lon=139.69175, level=7, opts='all')
+        rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url
+        with app.test_request_context(url):
+            res = app.dispatch_request()
+            rgeocoding_result = json.dumps(
+                json.loads(res.get_data(as_text=True)),
+                indent=2,
+                ensure_ascii=False,
+            )
+
     else:
         rgeocoding_result = ""
         rgeocoding_api_url = "（このサーバでは利用できません）"
@@ -301,6 +306,26 @@ def show_node(id):
     return set_query_options(response, options)
 
 
+def _node2dict(node: AddressNode, options: List[str]) -> dict:
+    result = node.as_dict()
+    if "postcode" in options or "all" in options:
+        result["postcode"] = node.get_postcode()
+
+    if "azaid" in options or "all" in options:
+        result["azaid"] = node.get_aza_id()
+
+    if "prefcode" in options or "all" in options:
+        result["prefcode"] = node.get_pref_jiscode()
+
+    if "citycode" in options or "all" in options:
+        result["citycode"] = node.get_city_jiscode()
+
+    if "lgcode" in options or "all" in options:
+        result["lgcode"] = node.get_city_local_authority_code()
+
+    return result
+
+
 @app.route("/geocode", methods=['POST', 'GET'])
 @cross_origin()
 def geocode():
@@ -308,10 +333,12 @@ def geocode():
         query = request.args.get('addr', '')
         area = request.args.get('area', '')
         skip_aza = request.args.get('skip_aza', 'auto')
+        options = request.args.get('opts', '')
     else:
         query = request.form.get('addr', '')
         area = request.form.get('area', '')
         skip_aza = request.form.get('skip_aza', 'auto')
+        options = request.form.get('opts', '')
 
     if query:
         jageocoder.set_search_config(
@@ -323,7 +350,12 @@ def geocode():
     else:
         return "'addr' is required.", 400
 
-    return jsonify([x.as_dict() for x in results]), 200
+    options = options.split(",")
+    results = [
+        {"node": _node2dict(r.node, options), "mached": r.matched}
+        for r in results
+    ]
+    return jsonify(results), 200
 
 
 @app.route("/rgeocode", methods=['POST', 'GET'])
@@ -336,19 +368,28 @@ def reverse_geocode():
         lat = request.args.get('lat')
         lon = request.args.get('lon')
         level = request.args.get('level', AddressLevel.AZA)
+        options = request.args.get('opts', '')
     else:
         lat = request.form.get('lat')
         lon = request.form.get('lon')
         level = request.form.get('level', AddressLevel.AZA)
+        options = request.form.get('opts', '')
 
     if lat and lon:
         results = jageocoder.reverse(
             x=float(lon),
             y=float(lat),
-            level=int(level))
+            level=int(level),
+            as_dict=False
+        )
     else:
         return "'lat' and 'lon' are required.", 400
 
+    options = options.split(",")
+    results = [
+        {"candidate": _node2dict(r["candidate"], options), "dist": r["dist"]}
+        for r in results
+    ]
     return jsonify(results), 200
 
 

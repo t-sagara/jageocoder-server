@@ -1,114 +1,234 @@
 {% extends 'base.html' %}
 
-{% block title %}WebAPI | Jageocoder{% endblock %}
+{% block title %}
+  WebAPI | Jageocoder
+{% endblock %}
 
 {% block content %}
-<h1>住所ジオコーディングAPI</h1>
-<p>住所を検索して緯度経度などの情報を取得します。</p>
-<h2>リクエスト例</h2>
-<p>例：<code>西新宿2丁目8-1</code>を<code>東京都</code>から検索</p>
-<pre>GET <a href="{{ geocoding_api_url }}" target="_blank">{{ geocoding_api_url }}</a></pre>
-<h2>リクエスト項目</h2>
-HTTP method は GET または POST が利用できます。
-<ul>
-<li><dl>
-  <dt>addr</dt>
-  <dd>解析したい住所文字列</dd>
-</dl></li>
-<li><dl>
-  <dt>area</dt>
-  <dd>検索対象とする都道府県・市区町村。複数指定したい場合はカンマで区切ってください。</dd>
-</dl></li>
-</ul>
-<h2>レスポンス例</h2>
-<pre>{{ geocoding_result }}</pre>
-<h2>レスポンス項目</h2>
-<ul>
-  <li><dl>
-    <dt>node</dt>
-    <dd>一致した末尾の住所ノード。</dd>
-    <ul>
-    <li><dl>
-      <dt>id</dt>
-      <dd>ノードのID。ただしこの ID は辞書の内部IDであり、
-        辞書のバージョンによって変化するので、住所の識別子としては
-      利用できません。</dd>
-    </dl></li>
-    <li><dl>
-      <dt>name</dt>
-      <dd>ノードの表記。</dd>
-    </dl></li>
-    <dl><li>
-      <dt>x</dt>
-      <dd>10進度数で表現した経度。</dd>
-    </li></dl>
-    <dl><li>
-      <dt>y</dt>
-      <dd>10進度数で表現した緯度。</dd>
-    </li></dl>
-    <li><dl>
-      <dt>level</dt>
-      <dd>住所レベル（1:都道府県, 2:郡, 3:市町村・23特別区,
-      4:政令市の区, 5:大字, 6:字・丁目, 7:街区・地番, 8:住居番号・枝番）。</dd>
-    </dl></li>
-    <dl><li>
-      <dt>priority</dt>
-      <dd>出典となるデータセットに指定された優先度の値。</dd>
-    </li></dl>
-    <dl><li>
-      <dt>note</dt>
-      <dd>注記。各種コードなどを含みます。</dd>
-    </li></dl>
-    <li><dl>
-      <dt>fullname</dt>
-      <dd>住所要素表記のリスト。</dd>
-    </dl></li>
-    </ul>
-  </dl></li>
-  <li><dl>
-    <dt>matched</dt>
-    <dd>住所として解析できた文字列。</dd>
-  </dl></li>
-</ul>
+  <h1>住所ジオコーディングAPI</h1>
+  <p>住所を検索して緯度経度などの情報を取得します。</p>
+  <h2>リクエスト例</h2>
+  <p>
+    例：<code>西新宿2丁目8-1</code>を<code>東京都</code>から検索し、全て(<code>all</code>)のオプション項目を含める。
+  </p>
+  <pre>
+    get <a href="{{ geocoding_api_url }}" target="_blank">{{ geocoding_api_url }}</a>
+  </pre>
+  <h2>リクエスト項目</h2>
+  HTTP method は GET または POST が利用できます。<ul>
+    <li>
+      <dl>
+        <dt>addr</dt>
+        <dd>解析したい住所文字列</dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>area</dt>
+        <dd>検索対象とする都道府県・市区町村。複数指定したい場合はカンマで区切ってください。</dd>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>opts</dt>
+        <dd>
+          レスポンスに含めるオプション項目。<ul>
+            <li>
+              <dl>
+                <dt>postcode</dt>
+                <dd>郵便番号(7桁、ハイフンを含まない)</dd>
+              </dl>
+            </li>
+            <li>
+              <dl>
+                <dt>prefcode</dt>
+                <dd>JIS X 0401 の都道府県コード(2桁)</dd>
+              </dl>
+            </li>
+            <li>
+              <dl>
+                <dt>citycode</dt>
+                <dd>JIS X 0402 の市区町村コード(5桁)</dd>
+              </dl>
+            </li>
+            <li>
+              <dl>
+                <dt>lgcode</dt>
+                <dd>総務省の全国地方公共団体コード(6桁)</dd>
+              </dl>
+            </li>
+            <li>
+              <dl>
+                <dt>azaid</dt>
+                <dd>アドレス・ベース・レジストリの町字ID(7桁)</dd>
+              </dl>
+            </li>
+            <li>
+              <dl>
+                <dt>all</dt>
+                <dd>上記すべて</dd>
+              </dl>
+            </li>
+          </ul>
+        </dd>
+      </dl>
+    </li>
+  </ul>
+  <h2>レスポンス例</h2>
+  <pre>{{ geocoding_result }}</pre>
+  <h2>レスポンス項目</h2>
+  <ul>
+    <li>
+      <dl>
+        <dt>node</dt>
+        <dd>一致した末尾の住所ノード。</dd>
+        <ul>
+          <li>
+            <dl>
+              <dt>id</dt>
+              <dd>ノードのID。ただしこの ID は辞書の内部IDであり、 辞書のバージョンによって変化するので、住所の識別子としては 利用できません。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>name</dt>
+              <dd>ノードの表記。</dd>
+            </dl>
+          </li>
+          <dl>
+            <li>
+              <dt>x</dt>
+              <dd>10進度数で表現した経度。</dd>
+            </li>
+          </dl>
+          <dl>
+            <li>
+              <dt>y</dt>
+              <dd>10進度数で表現した緯度。</dd>
+            </li>
+          </dl>
+          <li>
+            <dl>
+              <dt>level</dt>
+              <dd>住所レベル（1:都道府県, 2:郡, 3:市町村・23特別区, 4:政令市の区, 5:大字, 6:字・丁目, 7:街区・地番, 8:住居番号・枝番）。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>priority</dt>
+              <dd>出典となるデータセットに指定された優先度の値。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>note</dt>
+              <dd>注記。各種コードなどを含みます。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>fullname</dt>
+              <dd>住所要素表記のリスト。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>postcode</dt>
+              <dd>郵便番号(<code>opts</code>に<code>postcode</code>または<code>all</code>を指定した場合に追加)。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>prefcode</dt>
+              <dd>都道府県コード(<code>opts</code>に<code>prefcode</code>または<code>all</code>を指定した場合に追加)。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>citycode</dt>
+              <dd>市区町村コード(<code>opts</code>に<code>citycode</code>または<code>all</code>を指定した場合に追加)。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>lgcode</dt>
+              <dd>全国地方公共団体コード(<code>opts</code>に<code>lgcode</code>または<code>all</code>を指定した場合に追加)。</dd>
+            </dl>
+          </li>
+          <li>
+            <dl>
+              <dt>azaid</dt>
+              <dd>町字ID(<code>opts</code>に<code>azaid</code>または<code>all</code>を指定した場合に追加)。</dd>
+            </dl>
+          </li>
+        </ul>
+      </dl>
+    </li>
+    <li>
+      <dl>
+        <dt>matched</dt>
+        <dd>住所として解析できた文字列。</dd>
+      </dl>
+    </li>
+  </ul>
 
-<h1>リバース住所ジオコーディングAPI</h1>
-{% if rgeocoding_result != "" %}
-<p>検索地点を緯度経度で指定し、その地点を囲む3点の住所を取得します。
-半島の先端や住所ノードがまばらな場合など、3点が見つからない場合もあります。</p>
-<h2>リクエスト例</h2>
-<p>例：<code>北緯35.689472度, 東経139.69175度</code>を街区レベル(<code>7</code>)まで検索</p>
-<pre>GET <a href="{{ rgeocoding_api_url }}" target="_blank">{{ rgeocoding_api_url }}</a></pre>
-<h2>リクエスト項目</h2>
-HTTP method は GET または POST が利用できます。
-<ul>
-  <li><dl>
-    <dt>lat</dt>
-    <dd>検索地点の緯度（10進度）。</dd>
-  <dl></li>
-  <li><dl>
-    <dt>lon</dt>
-    <dd>検索地点の経度（10進度）。</dd>
-  <dl></li>
-  <li><dl>
-    <dt>level</dt>
-    <dd>検索する住所レベル（1:都道府県, 2:郡, 3:市町村・23特別区,
-      4:政令市の区, 5:大字, 6:字・丁目, 7:街区・地番, 8:住居番号・枝番）。</dd>
-  <dl></li>
-</ul>
-<h2>レスポンス例</h2>
-<pre>{{ rgeocoding_result }}</pre>
-<h2>レスポンス項目</h2>
-<ul>
-  <li><dl>
-    <dt>candidate</dt>
-    <dd>候補の住所ノード。各項目の意味はジオコーディングAPI
-    のレスポンス項目を参照してください。</dd>
-  <li><dl>
-    <dt>dist</dt>
-    <dd>検索地点から候補の住所ノードの代表点までの距離（メートル）。</dd>
-  </dl></li>
-</ul>
-{% else %}
-<p>設定により、このサーバではこの機能は利用できません。</p>
-{% endif %}
+  <h1>リバース住所ジオコーディングAPI</h1>
+  {% if rgeocoding_result != '' %}
+    <p>検索地点を緯度経度で指定し、その地点を囲む3点の住所を取得します。 半島の先端や住所ノードがまばらな場合など、3点が見つからない場合もあります。</p>
+    <h2>リクエスト例</h2>
+    <p>
+      例：<code>北緯35.689472度, 東経139.69175度</code>を街区レベル(<code>7</code>)まで検索し、全て(<code>all</code>)のオプション項目を含める。
+    </p>
+    <pre>
+      get <a href="{{ rgeocoding_api_url }}" target="_blank">{{ rgeocoding_api_url }}</a>
+    </pre>
+    <h2>リクエスト項目</h2>
+    HTTP method は GET または POST が利用できます。<ul>
+      <li>
+        <dl>
+          <dt>lat</dt>
+          <dd>検索地点の緯度（10進度）。</dd>
+        </dl>
+      </li>
+      <li>
+        <dl>
+          <dt>lon</dt>
+          <dd>検索地点の経度（10進度）。</dd>
+        </dl>
+      </li>
+      <li>
+        <dl>
+          <dt>level</dt>
+          <dd>検索する住所レベル（1:都道府県, 2:郡, 3:市町村・23特別区, 4:政令市の区, 5:大字, 6:字・丁目, 7:街区・地番, 8:住居番号・枝番）。</dd>
+        </dl>
+      </li>
+      <li>
+        <dl>
+          <dt>opts</dt>
+          <dd>
+            レスポンスに含めるオプション項目。選択肢はジオコーディングAPIと同じです。
+          </dd>
+        </dl>
+      </li>
+      </ul>
+    <h2>レスポンス例</h2>
+    <pre>{{ rgeocoding_result }}</pre>
+    <h2>レスポンス項目</h2>
+    <ul>
+      <li>
+        <dl>
+          <dt>candidate</dt>
+          <dd>候補の住所ノード。各項目の意味はジオコーディングAPI のレスポンス項目を参照してください。</dd>
+        </dl>
+      </li>
+      <li>
+        <dl>
+          <dt>dist</dt>
+          <dd>検索地点から候補の住所ノードの代表点までの距離（メートル）。</dd>
+        </dl>
+      </li>
+    </ul>
+  {% else %}
+    <p>設定により、このサーバではこの機能は利用できません。</p>
+  {% endif %}
 {% endblock %}
