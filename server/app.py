@@ -11,6 +11,7 @@ import dotenv
 from flask_cors import cross_origin
 from flask import Flask, flash, request, render_template, jsonify, \
     Response, url_for, make_response
+from flask_jsonrpc import JSONRPC
 
 import jageocoder
 from jageocoder.address import AddressLevel
@@ -23,6 +24,7 @@ dictionary_version = jageocoder.installed_dictionary_version()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 app.json.ensure_ascii = False
+jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
 
 # Load environment variables from ".env", if exists.
 envpath = Path(__file__).parent / 'secret/.env'
@@ -420,3 +422,82 @@ def set_query_options(
         response.set_cookie(key, value)
 
     return response
+
+
+# JSON-RPC
+@jsonrpc.method("jageocoder.installed_dictionary_version")
+def module_installed_dictionary_version() -> str:
+    return dictionary_version
+
+
+@jsonrpc.method("jageocoder.installed_dictionary_readme")
+def module_installed_dictionary_readme() -> str:
+    return jageocoder.installed_dictionary_readme()
+
+
+@jsonrpc.method("jageocoder.search")
+def module_searchNode(
+    query: str,
+    config: dict,
+) -> dict:
+    if not query:
+        raise ValueError("'query' is required.")
+
+    jageocoder.set_search_config(**config)
+    result = jageocoder.search(query=query)
+    return result
+
+
+@jsonrpc.method("jageocoder.searchNode")
+def module_searchNode(
+    query: str,
+    config: dict,
+) -> list:
+    if not query:
+        raise ValueError("'query' is required.")
+
+    jageocoder.set_search_config(**config)
+    search_results = jageocoder.searchNode(query=query)
+    results = []
+    for r in search_results:
+        results.append(r.as_dict())
+
+    return results
+
+
+@jsonrpc.method("node.get_record")
+def node_get_record(
+    pos: int,
+) -> dict:
+    record = jageocoder.get_module_tree().address_nodes.get_record(pos)
+    result = {
+        "id": record.id,
+        "name": record.name,
+        "name_index": record.name_index,
+        "x": record.x,
+        "y": record.y,
+        "level": record.level,
+        "priority": record.priority,
+        "note": record.note,
+        "parent_id": record.parent_id,
+        "sibling_id": record.sibling_id,
+    }
+    return result
+
+
+@jsonrpc.method("dataset.get")
+def dataset_get(id: int) -> dict:
+    datasets = jageocoder.get_module_tree().address_nodes.datasets
+    return datasets.get(id)
+
+
+@jsonrpc.method("jageocoder.reverse")
+def module_reverse(
+    x: float,
+    y: float,
+    level: int,
+) -> list:
+    reverse_results = jageocoder.reverse(
+        x=x, y=y, level=level, as_dict=True
+    )
+    return reverse_results
