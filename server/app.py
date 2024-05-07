@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import urllib
+import uuid
 
 import dotenv
 from flask_cors import cross_origin
@@ -20,6 +21,7 @@ from jageocoder.node import AddressNode
 jageocoder.init()
 module_version = jageocoder.__version__
 dictionary_version = jageocoder.installed_dictionary_version()
+server_signature = str(uuid.uuid4())
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -424,22 +426,52 @@ def set_query_options(
     return response
 
 
-# JSON-RPC
+#
+# JSON-RPC methods
+#
+
+@jsonrpc.method("jageocoder.server_signature")
+def remote_server_signature() -> str:
+    """
+    Return the running server signature.
+
+    Note
+    ----
+    - This is used to check that the server has not been restarted,
+        since the node ID changes when the dictionary is updated.
+    """
+    return server_signature
+
+
 @jsonrpc.method("jageocoder.installed_dictionary_version")
 def module_installed_dictionary_version() -> str:
+    """
+    Return the installed dictionary version.
+    """
     return dictionary_version
 
 
 @jsonrpc.method("jageocoder.installed_dictionary_readme")
 def module_installed_dictionary_readme() -> str:
+    """
+    Return the installed dictionary README.
+    """
     return jageocoder.installed_dictionary_readme()
 
 
 @jsonrpc.method("jageocoder.search")
-def module_searchNode(
+def module_search(
     query: str,
     config: dict,
 ) -> dict:
+    """
+    Return the 'search' result.
+
+    Note
+    ----
+    - Since JSON-RPC is stateless, the 'search_config' parameters
+        are required every time.
+    """
     if not query:
         raise ValueError("'query' is required.")
 
@@ -453,6 +485,14 @@ def module_searchNode(
     query: str,
     config: dict,
 ) -> list:
+    """
+    Return the 'searchNode' result.
+
+    Note
+    ----
+    - Since JSON-RPC is stateless, the 'search_config' parameters
+        are required every time.
+    """
     if not query:
         raise ValueError("'query' is required.")
 
@@ -468,7 +508,23 @@ def module_searchNode(
 @jsonrpc.method("node.get_record")
 def node_get_record(
     pos: int,
+    server: str,
 ) -> dict:
+    """
+    Return the node information specified by its pos (id).
+
+    Note
+    ----
+    - Since the 'node ID' changes when the dictionary is updated,
+        this method requires the server signature for confirmation.
+    """
+
+    if server != server_signature:
+        raise RuntimeError((
+            "Server signature does not match."
+            "The server may have been restarted."
+        ))
+
     record = jageocoder.get_module_tree().address_nodes.get_record(pos)
     result = {
         "id": record.id,
@@ -487,6 +543,9 @@ def node_get_record(
 
 @jsonrpc.method("dataset.get")
 def dataset_get(id: int) -> dict:
+    """
+    Return the dataset information specified by its id.
+    """
     datasets = jageocoder.get_module_tree().address_nodes.datasets
     return datasets.get(id)
 
@@ -497,6 +556,9 @@ def module_reverse(
     y: float,
     level: int,
 ) -> list:
+    """
+    Return the 'reverse' result.
+    """
     reverse_results = jageocoder.reverse(
         x=x, y=y, level=level, as_dict=True
     )
