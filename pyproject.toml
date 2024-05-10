@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "jageocoder-server"
 description = "Web service providing Japanese address geocoding functionality."
-version = "1.0.6"
+version = "1.0.7"
 authors = ["Takeshi Sagara <sagara@info-proto.com>"]
 repository = "https://github.com/t-sagara/jageocoder-server/"
 license = "The MIT License"
@@ -11,9 +11,10 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.8"
 charset-normalizer = "^3.1.0"
-flask-cors = ">=3.0.0"
-flask = ">=2.2.5, <3.0"
-jageocoder = "^2.1.5"
+Flask = ">=2.2.5, <3.0"
+Flask-cors = ">=3.0.0"
+Flask-JSONRPC = ">=2.2.0"
+jageocoder = ">=2.1.6.post1"
 python-dotenv = "^1.0.0"
 waitress = "^2.1.2"
 
