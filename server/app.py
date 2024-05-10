@@ -559,6 +559,11 @@ def module_reverse(
     """
     Return the 'reverse' result.
     """
+    if use_rgeocoder is False:
+        raise RuntimeError(
+            "This server does not provide reverse geocoding service."
+        )
+
     reverse_results = jageocoder.reverse(
         x=x, y=y, level=level, as_dict=True
     )

@@ -11,12 +11,12 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.8"
 charset-normalizer = "^3.1.0"
-flask-cors = ">=3.0.0"
-flask = ">=2.2.5, <3.0"
-jageocoder = "^2.1.5"
+Flask = ">=2.2.5, <3.0"
+Flask-cors = ">=3.0.0"
+Flask-JSONRPC = ">=2.2.0"
+jageocoder = ">=2.1.6.post1"
 python-dotenv = "^1.0.0"
 waitress = "^2.1.2"
-flask-jsonrpc = ">=2.2.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^5.0.0"
