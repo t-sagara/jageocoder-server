@@ -1,0 +1,14 @@
+<p class="text-primary">経緯度から住所を検索</p>
+<form id="address_form" action="{{ url_for('reverse') }}" method="POST">
+  <div class="row mb-3">
+    <div class="col-sm-4">
+      <input class="form-control" id="latitude" value="" name="lat" placeholder="緯度(南北方向)" />
+    </div>
+    <div class="col-sm-4">
+      <input class="form-control" id="longitude" value="" name="lon" placeholder="経度(東西方向)" />
+    </div>
+    <div class="col-sm-4">
+      <button type="submit" class="btn btn-primary w-100">経緯度から住所を検索</button>
+    </div>
+  </div>
+</form>

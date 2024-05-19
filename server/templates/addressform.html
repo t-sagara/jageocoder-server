@@ -1,88 +1,93 @@
+<p class="text-primary">住所を解析して正規化、経緯度や郵便番号などを検索</p>
 <form id="address_form" action="{{ url_for('search') }}" method="GET">
   <div class="row mb-3">
-    <div class="col-sm-6">
+    <div class="col-sm-8">
       <input class="form-control" id="query" value="{{ q }}" name="q" placeholder="検索したい住所を入力">
     </div>
-    <div class="col-sm-3">
+    <div class="col-sm-4">
       <input class="form-control" id="area" value="{{ area }}" name="area" placeholder="検索対象（都道府県・市区町村）">
     </div>
-    <div class="col-sm-3">
-      <button type="submit" class="btn btn-primary">検索</button>
-    </div>
   </div>
+  <div class="row mb-3">
+    <div class="col-sm-8">
 
-  <div class="accordion" id="accordionOption">
-    <div class="accordion-item">
-      <div class="accordion-header" id="headingOne">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-          オプション設定
-        </button>
-      </div>
-      <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionOption">
-        <div class="accordion-body">
+      <div class="accordion" id="accordionOption">
+        <div class="accordion-item">
+          <div class="accordion-header" id="headingOne">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+              検索オプション
+            </button>
+          </div>
+          <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionOption">
+            <div class="accordion-body">
 
-          <div class="row">
-            <div class="col-auto">
-              住所変更：
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="auto_redirect_on" name="auto_redirect" value="on" {% if auto_redirect == 'on' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="auto_redirect_on">変更先に移動する</label>
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="auto_redirect_off" name="auto_redirect" value="off" {% if auto_redirect != 'on' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="auto_redirect_off">変更先に移動しない</label>
+              <div class="row">
+                <div class="col-auto">
+                  合併等による住所の変更先を
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="auto_redirect_on" name="auto_redirect" value="on" {% if auto_redirect == 'on' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="auto_redirect_on">調べる</label>
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="auto_redirect_off" name="auto_redirect" value="off" {% if auto_redirect != 'on' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="auto_redirect_off">調べない</label>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-auto">
+                  住所に含まれる省略可能な小字を
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="aza_auto" name="skip_aza" value="auto" {% if skip_aza=='auto' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="aza_auto">自動判定</label>
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="aza_skip_on" name="skip_aza" value="on" {% if skip_aza=='on' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="aza_skip_on">省略する</label>
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="aza_skip_off" name="skip_aza" value="off" {% if skip_aza=='off' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="aza_skip_off">省略しない</label>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-auto">
+                  座標が登録されていない住所を
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="req_coords_on" name="req_coords" value="on" {% if req_coords == 'on' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="req_coords_on">検索しない</label>
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="req_coords_off" name="req_coords" value="off" {% if req_coords != 'on' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="req_coords_off">検索する</label>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-auto">
+                  もっとも正しいと思われる住所以外を
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="best_only_on" name="best_only" value="on" {% if best_only == 'on' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="best_only_on">検索しない</label>
+                </div>
+                <div class="form-check col-auto">
+                  <input class="form-check-input" type="radio" id="best_only_off" name="best_only" value="off" {% if best_only != 'on' %}checked="checked" {% endif %} />
+                  <label class="form-check-label" for="best_only_off">検索する</label>
+                </div>
+              </div>
+
             </div>
           </div>
-
-          <div class="row">
-            <div class="col-auto">
-              小字の省略：
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="aza_auto" name="skip_aza" value="auto" {% if skip_aza=='auto' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="aza_auto">自動判定</label>
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="aza_skip_on" name="skip_aza" value="on" {% if skip_aza=='on' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="aza_skip_on">省略する</label>
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="aza_skip_off" name="skip_aza" value="off" {% if skip_aza=='off' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="aza_skip_off">省略しない</label>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-auto">
-              座標がない住所：
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="req_coords_on" name="req_coords" value="on" {% if req_coords == 'on' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="req_coords_on">検索しない</label>
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="req_coords_off" name="req_coords" value="off" {% if req_coords != 'on' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="req_coords_off">検索する</label>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-auto">
-              最長一致候補以外：
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="best_only_on" name="best_only" value="on" {% if best_only == 'on' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="best_only_on">検索しない</label>
-            </div>
-            <div class="form-check col-auto">
-              <input class="form-check-input" type="radio" id="best_only_off" name="best_only" value="off" {% if best_only != 'on' %}checked="checked" {% endif %} />
-              <label class="form-check-label" for="best_only_off">検索する</label>
-            </div>
-          </div>
-
         </div>
       </div>
+    </div>
+    <div class="col-sm-4">
+      <button type="submit" class="btn btn-primary w-100">住所を解析</button>
     </div>
   </div>
 </form>
