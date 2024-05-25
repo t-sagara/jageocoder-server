@@ -200,7 +200,7 @@
         const node = vertice['candidate'];
         nodes[node.id] = node.fullname;
         let merged = false;
-        for (let j = 0; j < i; j++) {
+        for (let j = 0; j < points.length; j++) {
           if (points[j].geometry.coordinates[0] == node.x
               && points[j].geometry.coordinates[1] == node.y) {
             points[j].properties.names += ', ' + node.fullname.join('');

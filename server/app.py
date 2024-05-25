@@ -2,7 +2,7 @@ import copy
 import csv
 import jaconv
 import json
-from typing import List
+from typing import List, Tuple
 import os
 from pathlib import Path
 import re
@@ -124,7 +124,7 @@ def search_by():
 @app.route("/reverse", methods=['POST', 'GET'])
 def reverse():
 
-    def _parse_degree(val: str) -> tuple[float, str]:
+    def _parse_degree(val: str) -> Tuple[float, str]:
         hval = jaconv.z2h(val)
         hval = re.sub(r'\s+', '', hval)
 
