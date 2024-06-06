@@ -1,0 +1,44 @@
+<p class="text-primary">さまざまなコードから住所を検索</p>
+<form id="address_form" action="{{ url_for('search_by') }}" method="POST">
+  <div class="row mb-3">
+    <div class="col-sm-8">
+      <input class="form-control" id="postcode" value="" name="postcode" placeholder="郵便番号" />
+    </div>
+    <div class="col-sm-4">
+      <button type="submit" class="btn btn-primary w-100">郵便番号から検索</button>
+    </div>
+  </div>
+</form>
+
+<form id="address_form" action="{{ url_for('search_by') }}" method="GET">
+  <div class="row mb-3">
+    <div class="col-sm-8">
+      <input class="form-control" id="jisx0402" value="" name="citycode" placeholder="市区町村コード" />
+    </div>
+    <div class="col-sm-4">
+      <button type="submit" class="btn btn-primary w-100">市区町村コードから検索</button>
+    </div>
+  </div>
+</form>
+
+<form id="address_form" action="{{ url_for('search_by') }}" method="GET">
+  <div class="row mb-3">
+    <div class="col-sm-8">
+      <input class="form-control" id="jisx0401" value="" name="prefcode" placeholder="都道府県コード" />
+    </div>
+    <div class="col-sm-4">
+      <button type="submit" class="btn btn-primary w-100">都道府県コードから検索</button>
+    </div>
+  </div>
+</form>
+
+<form id="address_form" action="{{ url_for('search_by') }}" method="GET">
+  <div class="row mb-3">
+    <div class="col-sm-8">
+      <input class="form-control" id="aza_id" value="" name="aza_id" placeholder="アドレス・ベース・レジストリの町字ID" />
+    </div>
+    <div class="col-sm-4">
+      <button type="submit" class="btn btn-primary w-100">町字IDから検索</button>
+    </div>
+  </div>
+</form>
