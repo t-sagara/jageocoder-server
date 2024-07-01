@@ -343,7 +343,8 @@ def check_params(args, chunk):
         jageocoder.set_search_config(
             best_only=True,
             aza_skip=None,
-            require_coordinates=args['nc'] != '1',
+            require_coordinates=args['nc'] == '1',
+            auto_redirect=True,
             target_area=args["area"],
         )
     except RuntimeError:

@@ -1,16 +1,20 @@
 import copy
 import csv
+import jaconv
 import json
-from typing import List
+from typing import List, Tuple
 import os
 from pathlib import Path
 import re
 import urllib
+import uuid
 
 import dotenv
 from flask_cors import cross_origin
-from flask import Flask, flash, request, render_template, jsonify, \
-    Response, url_for, make_response
+from flask import (
+    Flask, flash, request, redirect, render_template,
+    jsonify, Response, url_for, make_response)
+from flask_jsonrpc import JSONRPC
 
 import jageocoder
 from jageocoder.address import AddressLevel
@@ -19,10 +23,12 @@ from jageocoder.node import AddressNode
 jageocoder.init()
 module_version = jageocoder.__version__
 dictionary_version = jageocoder.installed_dictionary_version()
+server_signature = str(uuid.uuid4())
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 app.json.ensure_ascii = False
+jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
 
 # Load environment variables from ".env", if exists.
 envpath = Path(__file__).parent / 'secret/.env'
@@ -57,6 +63,15 @@ def _split_args(val: str) -> List[str]:
     return args
 
 
+def _extract_digits(val: str) -> str:
+    """
+    Converts numerical characters to ASCII and
+    removes non-numeric characters.
+    """
+    hval = jaconv.z2h(val, kana=False, ascii=True, digit=True)
+    return re.sub(r'[^\d\.]', '', hval)
+
+
 @app.route("/")
 def index():
     options = get_query_options(request)
@@ -84,9 +99,117 @@ def get_aza(code):
         aza=aza_node, names=names)
 
 
+@app.route("/searchby", methods=['POST', 'GET'])
+def search_by():
+    if request.method == 'POST':
+        args = request.form
+    else:
+        args = request.args
+
+    if args.get('postcode'):
+        return redirect(url_for('search_postcode', code=args.get('postcode')))
+
+    if args.get('citycode'):
+        return redirect(url_for('search_jisx0402', code=args.get('citycode')))
+
+    if args.get('prefcode'):
+        return redirect(url_for('search_jisx0401', code=args.get('prefcode')))
+
+    if args.get('aza_id'):
+        return redirect(url_for('search_aza_id', aza_id=args.get('aza_id')))
+
+    return redirect(url_for('index'))
+
+
+@app.route("/reverse", methods=['POST', 'GET'])
+def reverse():
+
+    def _parse_degree(val: str) -> Tuple[float, str]:
+        hval = jaconv.z2h(val)
+        hval = re.sub(r'\s+', '', hval)
+
+        # check deg, min, sec (ex. '35° 39′ 31″' or '35度39分31秒')
+        m = re.search((
+            r'(N|S|E|W|北緯|南緯|東経|西経|)(\-?\d+)[°度]'
+            r'(\d+)[′分]([\d\.]+)[″秒]([NSEW]?)'), hval)
+        if m:
+            deg = float(m.group(2)) + float(m.group(3)) / 60.0\
+                + float(m.group(4)) / 3600.0
+            dir = ''
+            if m.group(1) in ('N', '北緯') or m.group(5) == 'N':
+                dir = 'lat'
+            elif m.group(1) in ('S', '南緯') or m.group(5) == 'S':
+                dir = 'lat'
+                deg = -deg
+            elif m.group(1) in ('E', '東経') or m.group(5) == 'E':
+                dir = 'lon'
+            elif m.group(1) in ('W', '西経') or m.group(5) == 'W':
+                dir = 'lon'
+                deg = -deg
+
+            return (deg, dir)
+
+        # check deg (ex. '35.658611')
+        m = re.search((
+            r'(N|S|E|W|北緯|南緯|東経|西経|)(\-?\d+)(\.\d+)?'
+            r'[°度]?([NSEW]?)'), hval)
+        if m:
+            deg = float(m.group(2) + m.group(3) or '')
+            dir = ''
+
+            if m.group(1) in ('N', '北緯') or m.group(4) == 'N':
+                dir = 'lat'
+            elif m.group(1) in ('S', '南緯') or m.group(4) == 'S':
+                dir = 'lat'
+                deg = -deg
+            elif m.group(1) in ('E', '東経') or m.group(4) == 'E':
+                dir = 'lon'
+            elif m.group(1) in ('W', '西経') or m.group(4) == 'W':
+                dir = 'lon'
+                deg = -deg
+
+            return (deg, dir)
+
+        return (None, '')
+
+    if request.method == 'POST':
+        args = request.form
+    else:
+        args = request.args
+
+    if args.get('lat') and args.get('lon'):
+        pass
+    else:
+        return redirect(url_for('index'))
+
+    vlat = _parse_degree(args.get('lat'))
+    vlon = _parse_degree(args.get('lon'))
+    if vlat[1] == 'lon' or vlon[1] == 'lat':
+        lon, lat = vlat[0], vlon[0]
+    else:
+        lon, lat = vlon[0], vlat[0]
+
+    results = jageocoder.reverse(
+        x=lon,
+        y=lat,
+        level=8,
+        as_dict=False
+    )
+
+    if len(results) == 1:
+        return redirect(url_for('show_node', id=results[0].node.id))
+
+    nodes = [x["candidate"] for x in results]
+    return render_template(
+        'node_list.html',
+        tree=jageocoder.get_module_tree(),
+        nodes=nodes)
+
+
 @app.route("/aza/<aza_id>", methods=['POST', 'GET'])
 def search_aza_id(aza_id):
     tree = jageocoder.get_module_tree()
+    aza_id = _extract_digits(aza_id)
     if len(aza_id) == 12:
         # jisx0402(5digits) + aza_id(7digits)
         candidates = tree.search_nodes_by_codes(
@@ -120,6 +243,11 @@ def search_aza_id(aza_id):
 @app.route("/jisx0401/<code>", methods=['POST', 'GET'])
 def search_jisx0401(code):
     tree = jageocoder.get_module_tree()
+    code = _extract_digits(code)
+
+    if len(code) < 2:
+        code = '0' + code
+
     nodes = tree.search_nodes_by_codes(
         category="jisx0401",
         value=code[0:2])
@@ -139,6 +267,11 @@ def search_jisx0401(code):
 @app.route("/jisx0402/<code>", methods=['POST', 'GET'])
 def search_jisx0402(code):
     tree = jageocoder.get_module_tree()
+    code = _extract_digits(code)
+
+    while len(code) < 5:
+        code = '0' + code
+
     nodes = tree.search_nodes_by_codes(
         category="jisx0402",
         value=code[0:5])
@@ -158,6 +291,7 @@ def search_jisx0402(code):
 @app.route("/postcode/<code>", methods=['POST', 'GET'])
 def search_postcode(code):
     tree = jageocoder.get_module_tree()
+    code = _extract_digits(code)
     nodes = tree.search_nodes_by_codes(
         category="postcode",
         value=code[0:7])
@@ -281,7 +415,17 @@ def search():
         )
         results = jageocoder.searchNode(query=options['q'])
     else:
-        results = None
+        results = []
+
+    if len(results) == 1:
+        return redirect(url_for('show_node', id=results[0].node.id))
+
+    if len(results) > 1:
+        nodes = [x.node for x in results]
+        return render_template(
+            'node_list.html',
+            tree=jageocoder.get_module_tree(),
+            nodes=nodes)
 
     response = make_response(render_template(
         'index.html',
@@ -301,6 +445,7 @@ def show_node(id):
         'node.html',
         tree=tree,
         node=node,
+        node_by_level=node.get_nodes_by_level(),
         **options,
     ))
     return set_query_options(response, options)
@@ -420,3 +565,165 @@ def set_query_options(
         response.set_cookie(key, value)
 
     return response
+
+
+#
+# JSON-RPC methods
+#
+
+@jsonrpc.method("jageocoder.server_signature")
+def remote_server_signature() -> str:
+    """
+    Return the running server signature.
+
+    Note
+    ----
+    - This is used to check that the server has not been restarted,
+        since the node ID changes when the dictionary is updated.
+    """
+    return server_signature
+
+
+@jsonrpc.method("jageocoder.installed_dictionary_version")
+def module_installed_dictionary_version() -> str:
+    """
+    Return the installed dictionary version.
+    """
+    return dictionary_version
+
+
+@jsonrpc.method("jageocoder.installed_dictionary_readme")
+def module_installed_dictionary_readme() -> str:
+    """
+    Return the installed dictionary README.
+    """
+    return jageocoder.installed_dictionary_readme()
+
+
+@jsonrpc.method("jageocoder.search")
+def module_search(
+    query: str,
+    config: dict,
+) -> dict:
+    """
+    Return the 'search' result.
+
+    Note
+    ----
+    - Since JSON-RPC is stateless, the 'search_config' parameters
+        are required every time.
+    """
+    if not query:
+        raise ValueError("'query' is required.")
+
+    jageocoder.set_search_config(**config)
+    result = jageocoder.search(query=query)
+    return result
+
+
+@jsonrpc.method("jageocoder.searchNode")
+def module_searchNode(
+    query: str,
+    config: dict,
+) -> list:
+    """
+    Return the 'searchNode' result.
+
+    Note
+    ----
+    - Since JSON-RPC is stateless, the 'search_config' parameters
+        are required every time.
+    """
+    if not query:
+        raise ValueError("'query' is required.")
+
+    jageocoder.set_search_config(**config)
+    search_results = jageocoder.searchNode(query=query)
+    results = []
+    for r in search_results:
+        results.append(r.as_dict())
+
+    return results
+
+
+@jsonrpc.method("node.get_record")
+def node_get_record(
+    pos: int,
+    server: str,
+) -> dict:
+    """
+    Return the node information specified by its pos (id).
+
+    Note
+    ----
+    - Since the 'node ID' changes when the dictionary is updated,
+        this method requires the server signature for confirmation.
+    """
+
+    if server != server_signature:
+        raise RuntimeError((
+            "Server signature does not match."
+            "The server may have been restarted."
+        ))
+
+    record = jageocoder.get_module_tree().address_nodes.get_record(pos)
+    result = record.to_json()
+    return result
+
+
+@jsonrpc.method("node.search_records_on")
+def node_search_records_on(
+    attr: str,
+    value: str,
+    funcname: str,
+    server: str,
+) -> list:
+    """
+    Search records by its attr and value.
+
+    Notes
+    -----
+    - This method returns the list of jsoned address nodes.
+    """
+    if server != server_signature:
+        raise RuntimeError((
+            "Server signature does not match."
+            "The server may have been restarted."
+        ))
+
+    records = jageocoder.get_module_tree().address_nodes.search_records_on(
+        attr=attr, value=value, funcname=funcname)
+    results = []
+    for record in records:
+        results.append(record.to_json())
+
+    return results
+
+
+@jsonrpc.method("dataset.get")
+def dataset_get(id: int) -> dict:
+    """
+    Return the dataset information specified by its id.
+    """
+    datasets = jageocoder.get_module_tree().address_nodes.datasets
+    return datasets.get(id)
+
+
+@jsonrpc.method("jageocoder.reverse")
+def module_reverse(
+    x: float,
+    y: float,
+    level: int,
+) -> list:
+    """
+    Return the 'reverse' result.
+    """
+    if use_rgeocoder is False:
+        raise RuntimeError(
+            "This server does not provide reverse geocoding service."
+        )
+
+    reverse_results = jageocoder.reverse(
+        x=x, y=y, level=level, as_dict=True
+    )
+    return reverse_results
