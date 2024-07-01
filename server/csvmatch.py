@@ -341,7 +341,7 @@ def check_params(args, chunk):
     # Validate target area
     try:
         jageocoder.set_search_config(
-            best_only=False,
+            best_only=True,
             aza_skip=None,
             require_coordinates=args['nc'] == '1',
             auto_redirect=True,
