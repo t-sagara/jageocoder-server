@@ -1,4 +1,6 @@
-<p class="text-primary">経緯度から住所を検索</p>
+<p class="text-primary">経緯度から住所を検索
+  <a id="getCurrentPos" href="#">[現在位置を取得]</a>
+</p>
 <form id="address_form" action="{{ url_for('reverse') }}" method="POST">
   <div class="row mb-3">
     <div class="col-sm-4">
@@ -12,3 +14,22 @@
     </div>
   </div>
 </form>
+
+<script>
+  function getLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(showPosition);
+    } else {
+      alert("このブラウザは現在位置の取得機能に非対応です");
+    }
+  }
+  
+  function showPosition(position) {
+    document.getElementById("latitude").value = position.coords.latitude;
+    document.getElementById("longitude").value = position.coords.longitude;
+  }
+
+  const x = document.getElementById("getCurrentPos");
+  x.addEventListener("click", getLocation);
+
+</script>
