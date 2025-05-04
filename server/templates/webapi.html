@@ -9,7 +9,8 @@
   <p>住所を検索して緯度経度などの情報を取得します。</p>
   <h2>リクエスト例</h2>
   <p>
-    例：<code>西新宿2丁目8-1</code>を<code>東京都</code>から検索し、全て(<code>all</code>)のオプション項目を含める。
+    例：<code>{{ params.addr }}</code>を<code>{{ params.area }}</code>から検索し、
+    オプション項目<code>{{ params.opts }}</code>を含める。
   </p>
   <pre>
     get <a href="{{ geocoding_api_url }}" target="_blank">{{ geocoding_api_url }}</a>
@@ -177,7 +178,9 @@
     <p>検索地点を緯度経度で指定し、その地点を囲む3点の住所を取得します。 半島の先端や住所ノードがまばらな場合など、3点が見つからない場合もあります。</p>
     <h2>リクエスト例</h2>
     <p>
-      例：<code>北緯35.689472度, 東経139.69175度</code>を街区レベル(<code>7</code>)まで検索し、全て(<code>all</code>)のオプション項目を含める。
+      例：<code>北緯{{ params.rlat }}度, 東経{{ params.rlon }}度</code>を
+      レベル(<code>{{ params.rlevel }}</code>)まで検索し、
+      オプション項目<code>{{ params.ropts }}</code>を含める。
     </p>
     <pre>
       get <a href="{{ rgeocoding_api_url }}" target="_blank">{{ rgeocoding_api_url }}</a>

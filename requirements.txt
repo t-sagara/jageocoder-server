@@ -2,7 +2,7 @@ charset-normalizer==3.4.0
 Flask==2.3.3
 Flask-Cors==5.0.0
 Flask-JSONRPC==2.2.2
-jageocoder==2.1.8
+jageocoder==2.1.9rc1
 python-dotenv==1.0.1
 requests==2.32.3
 waitress==2.1.2
