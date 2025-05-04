@@ -367,7 +367,24 @@ def license():
 @app.route("/webapi")
 def webapi():
     root_url = request.url.replace(url_for('webapi'), '')
-    url = url_for('geocode', addr='西新宿2丁目8-1', area='東京都', opts='all')
+    # url = url_for('geocode', addr='西新宿2丁目8-1', area='東京都', opts='all')
+    params = {
+        "addr": os.environ.get('GEOCODING_REQUEST_PARAM_ADDR', '西新宿2丁目8-1'),
+        "area": os.environ.get('GEOCODING_REQUEST_PARAM_AREA', '東京都'),
+        "opts": os.environ.get('GEOCODING_REQUEST_PARAM_OPTS', 'all'),
+        "rlat": float(os.environ.get(
+            'RGEOCODING_REQUEST_PARAM_LAT', '35.689472')),
+        "rlon": float(os.environ.get(
+            'RGEOCODING_REQUEST_PARAM_LON', '139.69175')),
+        "rlevel": int(os.environ.get('RGEOCODING_REQUEST_PARAM_LEVEL', '7')),
+        "ropts": os.environ.get('RGEOCODING_REQUEST_PARAM_OPTS', 'all'),
+    }
+    url = url_for(
+        'geocode',
+        addr=params["addr"],
+        area=params["area"],
+        opts=params["opts"],
+    )
     geocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url
     with app.test_request_context(url):
         res = app.dispatch_request()
@@ -378,8 +395,13 @@ def webapi():
         )
 
     if use_rgeocoder:
-        url = url_for('reverse_geocode', lat=35.689472,
-                      lon=139.69175, level=7, opts='all')
+        url = url_for(
+            'reverse_geocode',
+            lat=params["rlat"],
+            lon=params["rlon"],
+            level=params["rlevel"],
+            opts=params["ropts"],
+        )
         rgeocoding_api_url = os.environ.get('SITE_ROOT_URL', root_url) + url
         with app.test_request_context(url):
             res = app.dispatch_request()
@@ -395,6 +417,7 @@ def webapi():
 
     return render_template(
         'webapi.html',
+        params=params,
         geocoding_result=geocoding_result,
         rgeocoding_result=rgeocoding_result,
         geocoding_api_url=geocoding_api_url,
@@ -497,7 +520,7 @@ def geocode():
 
     options = options.split(",")
     results = [
-        {"node": _node2dict(r.node, options), "mached": r.matched}
+        {"node": _node2dict(r.node, options), "matched": r.matched}
         for r in results
     ]
     return jsonify(results), 200
@@ -707,6 +730,15 @@ def dataset_get(id: int) -> dict:
     """
     datasets = jageocoder.get_module_tree().address_nodes.datasets
     return datasets.get(id)
+
+
+@jsonrpc.method("dataset.get_all")
+def dataset_get_all() -> dict:
+    """
+    Return the all dataset information
+    """
+    datasets = jageocoder.get_module_tree().address_nodes.datasets
+    return datasets.get_all()
 
 
 @jsonrpc.method("jageocoder.reverse")

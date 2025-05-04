@@ -33,9 +33,16 @@
 
 - サーバ設定の設定を確認します。
 
-    `docker-compose.yml` の `environment:` 以下の行でサーバの設定を行うことができます。
+    `server/secret/env.dist` を `server/secret/.env` にコピーしてください。
+    `server/secret/.env` で環境変数を設定することで、サーバの設定を行うことができます。
+    
+    **注意** このファイルを変更した場合は、次の `docker compose build` を実行して、変更内容をコンテナ内に反映してください。
 
     - `SITE_MESSAGE`: サーバに表示する文字列を設定できます。
+
+    - `GEOCODING_REQUEST_PARAMS_*`: WebAPI ページの住所ジオコーディングAPIのリクエストパラメータを設定できます。
+
+    - `RGEOCODING_REQUEST_PARAMS_*`: WebAPI ページのリバース住所ジオコーディングAPIのリクエストパラメータを設定できます。
 
     - `LAN_MODE`: 1 にすると、地図表示のために地理院地図サーバに
         アクセスするといった外部ネットワークへの通信を行いません。
@@ -121,6 +128,24 @@
 
     サーバを起動中に R-tree インデックスを構築した場合、
     一度サーバを Ctrl+C で停止して、再度起動してください。
+
+- サーバ設定の設定を確認します。
+
+    `server/secret/env.dist` を `server/secret/.env` にコピーしてください。
+
+    `server/secret/.env` で環境変数を設定することで、サーバの設定を行うことができます。
+
+    - `SITE_MESSAGE`: サーバに表示する文字列を設定できます。
+
+    - `GEOCODING_REQUEST_PARAMS_*`: WebAPI ページの住所ジオコーディングAPIのリクエストパラメータを設定できます。
+
+    - `RGEOCODING_REQUEST_PARAMS_*`: WebAPI ページのリバース住所ジオコーディングAPIのリクエストパラメータを設定できます。
+
+    - `LAN_MODE`: 1 にすると、地図表示のために地理院地図サーバに
+        アクセスするといった外部ネットワークへの通信を行いません。
+
+    - `BUILD_RTREE`: 1 にすると、リバースジオコーディング機能に
+        必要なインデックスを初回起動時に構築します。
 
 - サーバを起動します。
 
