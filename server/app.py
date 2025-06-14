@@ -14,7 +14,7 @@ from flask_cors import cross_origin
 from flask import (
     Flask, flash, request, redirect, render_template,
     jsonify, Response, url_for, make_response)
-from flask_jsonrpc import JSONRPC
+from flask_jsonrpc.app import JSONRPC
 
 import jageocoder
 from jageocoder.address import AddressLevel
@@ -24,6 +24,7 @@ jageocoder.init()
 module_version = jageocoder.__version__
 dictionary_version = jageocoder.installed_dictionary_version()
 server_signature = str(uuid.uuid4())
+tree = jageocoder.get_module_tree()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -35,7 +36,7 @@ envpath = Path(__file__).parent / 'secret/.env'
 if envpath.exists:
     dotenv.load_dotenv(envpath)
 
-tree_dir = Path(jageocoder.get_module_tree().db_dir)
+tree_dir = Path(tree.db_dir)
 if (tree_dir / "rtree.dat").exists() and \
         (tree_dir / "rtree.idx").exists():
     use_rgeocoder = True
@@ -85,7 +86,6 @@ def index():
 
 @app.route("/azamaster/<code>", methods=['POST', 'GET'])
 def get_aza(code):
-    tree = jageocoder.get_module_tree()
     aza_node = tree.aza_masters.search_by_code(code)
 
     if aza_node:
@@ -202,13 +202,12 @@ def reverse():
     nodes = [x["candidate"] for x in results]
     return render_template(
         'node_list.html',
-        tree=jageocoder.get_module_tree(),
+        tree=tree,
         nodes=nodes)
 
 
 @app.route("/aza/<aza_id>", methods=['POST', 'GET'])
 def search_aza_id(aza_id):
-    tree = jageocoder.get_module_tree()
     aza_id = _extract_digits(aza_id)
     if len(aza_id) == 12:
         # jisx0402(5digits) + aza_id(7digits)
@@ -242,7 +241,6 @@ def search_aza_id(aza_id):
 
 @app.route("/jisx0401/<code>", methods=['POST', 'GET'])
 def search_jisx0401(code):
-    tree = jageocoder.get_module_tree()
     code = _extract_digits(code)
 
     if len(code) < 2:
@@ -266,7 +264,6 @@ def search_jisx0401(code):
 
 @app.route("/jisx0402/<code>", methods=['POST', 'GET'])
 def search_jisx0402(code):
-    tree = jageocoder.get_module_tree()
     code = _extract_digits(code)
 
     while len(code) < 5:
@@ -290,7 +287,6 @@ def search_jisx0402(code):
 
 @app.route("/postcode/<code>", methods=['POST', 'GET'])
 def search_postcode(code):
-    tree = jageocoder.get_module_tree()
     code = _extract_digits(code)
     nodes = tree.search_nodes_by_codes(
         category="postcode",
@@ -447,7 +443,7 @@ def search():
         nodes = [x.node for x in results]
         return render_template(
             'node_list.html',
-            tree=jageocoder.get_module_tree(),
+            tree=tree,
             nodes=nodes)
 
     response = make_response(render_template(
@@ -460,7 +456,6 @@ def search():
 
 @app.route("/node/<id>", methods=['POST', 'GET'])
 def show_node(id):
-    tree = jageocoder.get_module_tree()
     node = tree.get_node_by_id(int(id))
     options = get_query_options(request)
 
@@ -689,9 +684,18 @@ def node_get_record(
             "The server may have been restarted."
         ))
 
-    record = jageocoder.get_module_tree().address_nodes.get_record(pos)
+    record = tree.address_nodes.get_record(pos)
     result = record.to_json()
     return result
+
+
+@jsonrpc.method("node.count_records")
+def node_count_records() -> int:
+    """
+    Return the number of records in the database.
+    """
+    n = tree.address_nodes.count_records()
+    return n
 
 
 @jsonrpc.method("node.search_records_on")
@@ -714,7 +718,7 @@ def node_search_records_on(
             "The server may have been restarted."
         ))
 
-    records = jageocoder.get_module_tree().address_nodes.search_records_on(
+    records = tree.address_nodes.search_records_on(
         attr=attr, value=value, funcname=funcname)
     results = []
     for record in records:
@@ -728,7 +732,7 @@ def dataset_get(id: int) -> dict:
     """
     Return the dataset information specified by its id.
     """
-    datasets = jageocoder.get_module_tree().address_nodes.datasets
+    datasets = tree.address_nodes.datasets
     return datasets.get(id)
 
 
@@ -737,7 +741,7 @@ def dataset_get_all() -> dict:
     """
     Return the all dataset information
     """
-    datasets = jageocoder.get_module_tree().address_nodes.datasets
+    datasets = tree.address_nodes.datasets
     return datasets.get_all()
 
 
@@ -759,3 +763,26 @@ def module_reverse(
         x=x, y=y, level=level, as_dict=True
     )
     return reverse_results
+
+
+@jsonrpc.method("aza_master.search_by_codes")
+def azamaster_search_by_codes(
+    code: str,
+) -> dict:
+    """
+    Search Address-base-registry's aza records.
+    """
+    record = tree.aza_masters.search_by_code(code)
+    if isinstance(record, dict):
+        return record
+
+    result = {
+        "code": record.code,
+        "names": record.names,
+        "namesIndex": record.namesIndex,
+        "azaClass": record.azaClass,
+        "isJukyo": record.isJukyo,
+        "startCountType": record.startCountType,
+        "postcode": record.postcode,
+    }
+    return result
