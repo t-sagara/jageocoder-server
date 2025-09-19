@@ -6,42 +6,36 @@ from typing import List, Tuple
 import os
 from pathlib import Path
 import re
+from typing import Dict
 import urllib
+import urllib.parse
 import uuid
 
 import dotenv
 from flask_cors import cross_origin
 from flask import (
     Flask, flash, request, redirect, render_template,
-    jsonify, Response, url_for, make_response)
+    jsonify, Response, url_for, make_response, g)
 from flask_jsonrpc.app import JSONRPC
 
 import jageocoder
 from jageocoder.address import AddressLevel
+from jageocoder.local import LocalTree
 from jageocoder.node import AddressNode
 
-jageocoder.init()
 module_version = jageocoder.__version__
 dictionary_version = jageocoder.installed_dictionary_version()
 server_signature = str(uuid.uuid4())
-tree = jageocoder.get_module_tree()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
-app.json.ensure_ascii = False
+app.config['JSON_AS_ASCII'] = False
 jsonrpc = JSONRPC(app, "/jsonrpc", enable_web_browsable_api=False)
 
 # Load environment variables from ".env", if exists.
 envpath = Path(__file__).parent / 'secret/.env'
 if envpath.exists:
     dotenv.load_dotenv(envpath)
-
-tree_dir = Path(tree.db_dir)
-if (tree_dir / "rtree.dat").exists() and \
-        (tree_dir / "rtree.idx").exists():
-    use_rgeocoder = True
-else:
-    use_rgeocoder = False
 
 re_splitter = re.compile(r'[ \u2000,、]+')
 
@@ -73,6 +67,20 @@ def _extract_digits(val: str) -> str:
     return re.sub(r'[^\d\.]', '', hval)
 
 
+@app.before_request
+def get_localtree() -> None:
+    g.tree = LocalTree(mode='r', debug=False)
+    if not isinstance(g.tree, LocalTree):
+        raise RuntimeError("Can't use remote tree for the server.")
+
+    tree_dir = Path(g.tree.db_dir)
+    if (tree_dir / "rtree.dat").exists() and \
+            (tree_dir / "rtree.idx").exists():
+        g.use_rgeocoder = True
+    else:
+        g.use_rgeocoder = False
+
+
 @app.route("/")
 def index():
     options = get_query_options(request)
@@ -86,7 +94,7 @@ def index():
 
 @app.route("/azamaster/<code>", methods=['POST', 'GET'])
 def get_aza(code):
-    aza_node = tree.aza_masters.search_by_code(code)
+    aza_node = g.tree.aza_masters.search_by_code(code)
 
     if aza_node:
         names = json.loads(aza_node.names)
@@ -95,7 +103,7 @@ def get_aza(code):
 
     return render_template(
         'aza.html',
-        tree=tree,
+        tree=g.tree,
         aza=aza_node, names=names)
 
 
@@ -170,7 +178,7 @@ def reverse():
 
             return (deg, dir)
 
-        return (None, '')
+        return (0.0, '')
 
     if request.method == 'POST':
         args = request.form
@@ -182,14 +190,14 @@ def reverse():
     else:
         return redirect(url_for('index'))
 
-    vlat = _parse_degree(args.get('lat'))
-    vlon = _parse_degree(args.get('lon'))
+    vlat = _parse_degree(args.get('lat', ''))
+    vlon = _parse_degree(args.get('lon', ''))
     if vlat[1] == 'lon' or vlon[1] == 'lat':
         lon, lat = vlat[0], vlon[0]
     else:
         lon, lat = vlon[0], vlat[0]
 
-    results = jageocoder.reverse(
+    results = g.tree.reverse(
         x=lon,
         y=lat,
         level=8,
@@ -202,7 +210,7 @@ def reverse():
     nodes = [x["candidate"] for x in results]
     return render_template(
         'node_list.html',
-        tree=tree,
+        tree=g.tree,
         nodes=nodes)
 
 
@@ -211,31 +219,31 @@ def search_aza_id(aza_id):
     aza_id = _extract_digits(aza_id)
     if len(aza_id) == 12:
         # jisx0402(5digits) + aza_id(7digits)
-        candidates = tree.search_nodes_by_codes(
+        candidates = g.tree.search_nodes_by_codes(
             category="aza_id",
             value=aza_id[-7:])
         nodes = [x for x in candidates if x.get_city_jiscode() == aza_id[0:5]]
     elif len(aza_id) == 13:
         # lasdec(6digits) + aza_id(7digits)
-        candidates = tree.search_nodes_by_codes(
+        candidates = g.tree.search_nodes_by_codes(
             category="aza_id",
             value=aza_id[-7:])
         nodes = [x for x in candidates
                  if x.get_city_local_authority_code() == aza_id[0:6]]
     else:
-        nodes = tree.search_nodes_by_codes(
+        nodes = g.tree.search_nodes_by_codes(
             category="aza_id",
             value=aza_id)
 
     if len(nodes) == 1:
         return render_template(
             'node.html',
-            tree=tree,
+            tree=g.tree,
             node=nodes[0])
 
     return render_template(
         'node_list.html',
-        tree=tree,
+        tree=g.tree,
         nodes=nodes)
 
 
@@ -246,19 +254,19 @@ def search_jisx0401(code):
     if len(code) < 2:
         code = '0' + code
 
-    nodes = tree.search_nodes_by_codes(
+    nodes = g.tree.search_nodes_by_codes(
         category="jisx0401",
         value=code[0:2])
 
     if len(nodes) == 1:
         return render_template(
             'node.html',
-            tree=tree,
+            tree=g.tree,
             node=nodes[0])
 
     return render_template(
         'node_list.html',
-        tree=tree,
+        tree=g.tree,
         nodes=nodes)
 
 
@@ -269,38 +277,38 @@ def search_jisx0402(code):
     while len(code) < 5:
         code = '0' + code
 
-    nodes = tree.search_nodes_by_codes(
+    nodes = g.tree.search_nodes_by_codes(
         category="jisx0402",
         value=code[0:5])
 
     if len(nodes) == 1:
         return render_template(
             'node.html',
-            tree=tree,
+            tree=g.tree,
             node=nodes[0])
 
     return render_template(
         'node_list.html',
-        tree=tree,
+        tree=g.tree,
         nodes=nodes)
 
 
 @app.route("/postcode/<code>", methods=['POST', 'GET'])
 def search_postcode(code):
     code = _extract_digits(code)
-    nodes = tree.search_nodes_by_codes(
+    nodes = g.tree.search_nodes_by_codes(
         category="postcode",
         value=code[0:7])
 
     if len(nodes) == 1:
         return render_template(
             'node.html',
-            tree=tree,
+            tree=g.tree,
             node=nodes[0])
 
     return render_template(
         'node_list.html',
-        tree=tree,
+        tree=g.tree,
         nodes=nodes)
 
 
@@ -324,22 +332,22 @@ def csvmatch():
     try:
         input_args, chunk = csvmatch.parse_multipart_formdata()
         args = copy.copy(input_args)
-        args, buf = csvmatch.check_params(args, chunk)
+        args, buf = csvmatch.check_params(g.tree, args, chunk)
         args["area"] = _split_args(args["area"])
-        res = Response(csvmatch.geocoding_request_csv(args, buf))
+        res = Response(csvmatch.geocoding_request_csv(g.tree, args, buf))
         res.content_type = f"text/csv; charset={args['oenc']}"
         res.headers["Content-Disposition"] = \
             "attachment; filename={}".format(
                 urllib.parse.quote(args['filename']))
         return res
-    except ValueError as e:
-        flash("パラメータが正しくありません： {}".format(e), 'danger')
     except UnicodeEncodeError:
         flash((
             "入力文字エンコーディングの自動認識に失敗したか、"
             "指定されたエンコーディングで変換できませんでした。"
             "オプション項目で正しいエンコーディングを指定してください。"
         ))
+    except ValueError as e:
+        flash("パラメータが正しくありません： {}".format(e), 'danger')
     except csv.Error:
         flash(
             f"ファイル '{args['filename']}' をCSVとして解析できませんでした。",
@@ -390,7 +398,7 @@ def webapi():
             ensure_ascii=False,
         )
 
-    if use_rgeocoder:
+    if g.use_rgeocoder:
         url = url_for(
             'reverse_geocode',
             lat=params["rlat"],
@@ -425,14 +433,14 @@ def webapi():
 def search():
     options = get_query_options(request)
     if options['q']:
-        jageocoder.set_search_config(
+        g.tree.set_config(
             aza_skip=options['skip_aza'],
             require_coordinates=(options['req_coords'] == 'on'),
             best_only=(options['best_only'] == 'on'),
             auto_redirect=(options['auto_redirect'] == 'on'),
             target_area=_split_args(options['area']),
         )
-        results = jageocoder.searchNode(query=options['q'])
+        results = g.tree.searchNode(query=options['q'])
     else:
         results = []
 
@@ -443,7 +451,7 @@ def search():
         nodes = [x.node for x in results]
         return render_template(
             'node_list.html',
-            tree=tree,
+            tree=g.tree,
             nodes=nodes)
 
     response = make_response(render_template(
@@ -456,12 +464,12 @@ def search():
 
 @app.route("/node/<id>", methods=['POST', 'GET'])
 def show_node(id):
-    node = tree.get_node_by_id(int(id))
+    node = g.tree.get_node_by_id(int(id))
     options = get_query_options(request)
 
     response = make_response(render_template(
         'node.html',
-        tree=tree,
+        tree=g.tree,
         node=node,
         node_by_level=node.get_nodes_by_level(),
         **options,
@@ -504,12 +512,12 @@ def geocode():
         options = request.form.get('opts', '')
 
     if query:
-        jageocoder.set_search_config(
+        g.tree.set_config(
             best_only=True,
             auto_redirect=True,
             target_area=_split_args(area),
             aza_skip=skip_aza)
-        results = jageocoder.searchNode(query=query)
+        results = g.tree.searchNode(query=query)
     else:
         return "'addr' is required.", 400
 
@@ -524,7 +532,7 @@ def geocode():
 @app.route("/rgeocode", methods=['POST', 'GET'])
 @cross_origin()
 def reverse_geocode():
-    if not use_rgeocoder:
+    if not g.use_rgeocoder:
         return "'rgeocode' is not available on this server.", 400
 
     if request.method == 'GET':
@@ -539,7 +547,7 @@ def reverse_geocode():
         options = request.form.get('opts', '')
 
     if lat and lon:
-        results = jageocoder.reverse(
+        results = g.tree.reverse(
             x=float(lon),
             y=float(lat),
             level=int(level),
@@ -556,7 +564,7 @@ def reverse_geocode():
     return jsonify(results), 200
 
 
-def get_query_options(request) -> None:
+def get_query_options(request) -> Dict[str, str]:
     defaults = {
         'q': '',
         'area': '',
@@ -615,7 +623,7 @@ def module_installed_dictionary_readme() -> str:
     """
     Return the installed dictionary README.
     """
-    return jageocoder.installed_dictionary_readme()
+    return g.tree.installed_dictionary_readme()
 
 
 @jsonrpc.method("jageocoder.search")
@@ -634,8 +642,8 @@ def module_search(
     if not query:
         raise ValueError("'query' is required.")
 
-    jageocoder.set_search_config(**config)
-    result = jageocoder.search(query=query)
+    g.tree.set_config(**config)
+    result = g.tree.search(query=query)
     return result
 
 
@@ -655,8 +663,8 @@ def module_searchNode(
     if not query:
         raise ValueError("'query' is required.")
 
-    jageocoder.set_search_config(**config)
-    search_results = jageocoder.searchNode(query=query)
+    g.tree.set_config(**config)
+    search_results = g.tree.searchNode(query=query)
     results = []
     for r in search_results:
         results.append(r.as_dict())
@@ -754,12 +762,12 @@ def module_reverse(
     """
     Return the 'reverse' result.
     """
-    if use_rgeocoder is False:
+    if g.use_rgeocoder is False:
         raise RuntimeError(
             "This server does not provide reverse geocoding service."
         )
 
-    reverse_results = jageocoder.reverse(
+    reverse_results = g.tree.reverse(
         x=x, y=y, level=level, as_dict=True
     )
     return reverse_results
