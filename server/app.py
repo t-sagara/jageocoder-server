@@ -692,7 +692,7 @@ def node_get_record(
             "The server may have been restarted."
         ))
 
-    record = tree.address_nodes.get_record(pos)
+    record = g.tree.get_node_by_id(pos)
     result = record.to_json()
     return result
 
@@ -702,7 +702,7 @@ def node_count_records() -> int:
     """
     Return the number of records in the database.
     """
-    n = tree.address_nodes.count_records()
+    n = g.tree.address_nodes.count_records()
     return n
 
 
@@ -726,7 +726,7 @@ def node_search_records_on(
             "The server may have been restarted."
         ))
 
-    records = tree.address_nodes.search_records_on(
+    records = g.tree.address_nodes.search_records_on(
         attr=attr, value=value, funcname=funcname)
     results = []
     for record in records:
@@ -740,7 +740,7 @@ def dataset_get(id: int) -> dict:
     """
     Return the dataset information specified by its id.
     """
-    datasets = tree.address_nodes.datasets
+    datasets = g.tree.address_nodes.datasets
     return datasets.get(id)
 
 
@@ -749,7 +749,7 @@ def dataset_get_all() -> dict:
     """
     Return the all dataset information
     """
-    datasets = tree.address_nodes.datasets
+    datasets = g.tree.address_nodes.datasets
     return datasets.get_all()
 
 
@@ -780,7 +780,7 @@ def azamaster_search_by_codes(
     """
     Search Address-base-registry's aza records.
     """
-    record = tree.aza_masters.search_by_code(code)
+    record = g.tree.aza_masters.search_by_code(code)
     if isinstance(record, dict):
         return record
 
