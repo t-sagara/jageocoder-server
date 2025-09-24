@@ -3,12 +3,14 @@ import datetime
 import io
 from logging import getLogger
 import re
+from typing import Any, Dict, List, Sequence
 
 import charset_normalizer
 from flask import render_template, request, stream_with_context
 
-import jageocoder
 from jageocoder.address import AddressLevel
+from jageocoder.local import LocalTree
+from jageocoder.node import AddressNode
 
 
 logger = getLogger(__name__)
@@ -50,7 +52,7 @@ def _validate_line_as_csv(line: str) -> bool:
     return False
 
 
-def _get_nodes_list_by_level(node: jageocoder.node.AddressNode):
+def _get_nodes_list_by_level(node: AddressNode):
     """
     The function returns an array of this node and its upper nodes.
     The Nth node of the array contains the list of nodes corresponding
@@ -84,7 +86,11 @@ def _get_nodes_list_by_level(node: jageocoder.node.AddressNode):
     return result
 
 
-def _geocode_row(row, args, boundary):
+def _geocode_row(
+        tree: LocalTree,
+        row: List[str],
+        args: Dict[str, Any],
+        boundary: str):
     """
     Geocoding 1 line.
 
@@ -109,9 +115,9 @@ def _geocode_row(row, args, boundary):
 
     else:
         address = ''.join([row[x] for x in args['cols']])
-        results = jageocoder.searchNode(query=address)
+        results = tree.searchNode(query=address)
         if len(results) > 0:
-            node = results[0].node
+            node = results[0].get_node()
             levels = _get_nodes_list_by_level(node)
             for oc in output_columns:
                 if oc[0] not in args:
@@ -120,11 +126,11 @@ def _geocode_row(row, args, boundary):
                 if oc[0] == 'ofmtd':
                     newrow.append(''.join(node.get_fullname()))
                 elif oc[0] == 'ox':
-                    newrow.append(node.x if float(node.y) < 90.0 else '')
+                    newrow.append(str(node.x) if float(node.y) < 90.0 else '')
                 elif oc[0] == 'oy':
-                    newrow.append(node.y if float(node.y) < 90.0 else '')
+                    newrow.append(str(node.y) if float(node.y) < 90.0 else '')
                 elif oc[0] == 'olevel':
-                    newrow.append(node.level)
+                    newrow.append(str(node.level))
                 elif oc[0] == 'omatch':
                     newrow.append(results[0].matched)
                 elif oc[0] == 'oremain':
@@ -177,7 +183,7 @@ def _geocode_row(row, args, boundary):
                     else:
                         best = ''.join(node.get_fullname())
                         for r in results[1:]:
-                            fullname = ''.join(r.node.get_fullname())
+                            fullname = ''.join(r.get_node().get_fullname())
                             if fullname != best:
                                 newrow.append(fullname)
                                 break
@@ -203,14 +209,14 @@ def parse_multipart_formdata():
     """
     m = re.match(
         r'multipart/form-data; boundary=(.*$)',
-        request.headers.get('Content-Type'),
+        str(request.headers.get('Content-Type', '')),
         re.IGNORECASE)
     if m is None:
         raise RuntimeError()
 
     boundary = m.group(1).encode('utf-8')
     mode = 0  # Looking for a boundary
-    name = None
+    name = ""
     args = {"boundary": boundary}
     while True:
         chunk = request.stream.readline(MAX_READLINE_BYTES)
@@ -230,10 +236,15 @@ def parse_multipart_formdata():
             line = str(charset_normalizer.from_bytes(chunk).best())
             if line.lower().startswith('content-disposition:'):
                 m = re.search(r'name="(.*?)"', line)
+                if m is None:
+                    name = ''
+                    continue
+
                 name = m.group(1)
                 if name == 'file':
                     m = re.search(r'filename="(.*?)"', line)
-                    args['filename'] = m.group(1)
+                    if m is not None:
+                        args['filename'] = m.group(1)
 
                 continue
 
@@ -252,7 +263,11 @@ def parse_multipart_formdata():
 
 
 @stream_with_context
-def check_params(args, chunk):
+def check_params(
+    tree: LocalTree,
+    args: Dict[str, Any],
+    chunk: bytes,
+):
     """
     Check posted form parameters.
     """
@@ -340,7 +355,7 @@ def check_params(args, chunk):
 
     # Validate target area
     try:
-        jageocoder.set_search_config(
+        tree.set_config(
             best_only=True,
             aza_skip=None,
             require_coordinates=args['nc'] == '1',
@@ -354,7 +369,10 @@ def check_params(args, chunk):
 
 
 @stream_with_context
-def geocoding_request_csv(args, buffer):
+def geocoding_request_csv(
+        tree: LocalTree,
+        args: Dict[str, Any],
+        buffer: bytes):
     # Geocoding csv file
     boundary = args['boundary'].decode(args['ienc'])
     output = io.StringIO()
@@ -364,7 +382,7 @@ def geocoding_request_csv(args, buffer):
     if len(buffer) > 0:
         reader = csv.reader(io.StringIO(buffer.decode(args['ienc'])))
         for row in reader:
-            r = _geocode_row(row, args, boundary=boundary)
+            r = _geocode_row(tree, row, args, boundary=boundary)
             if r is None:
                 break
 
@@ -380,7 +398,7 @@ def geocoding_request_csv(args, buffer):
     textio = io.TextIOWrapper(request.stream, encoding=args['ienc'])
     reader = csv.reader(textio)
     for row in reader:
-        r = _geocode_row(row, args, boundary=boundary)
+        r = _geocode_row(tree, row, args, boundary=boundary)
         if r is None:
             break
 
