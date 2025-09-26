@@ -3,6 +3,7 @@ import csv
 import jaconv
 import json
 import logging
+import threading
 from typing import List, Tuple
 import os
 from pathlib import Path
@@ -42,6 +43,9 @@ if envpath.exists:
 
 re_splitter = re.compile(r'[ \u2000,、]+')
 
+# Recycling pool of local trees for each thread
+tree_pool: Dict[int, Tuple[LocalTree, bool]] = {}
+
 
 @app.context_processor
 def inject_versions():
@@ -72,30 +76,28 @@ def _extract_digits(val: str) -> str:
 
 @app.before_request
 def get_localtree() -> None:
-    if 'tree' not in g:
-        import threading
-        thread_id = threading.get_ident()
+    global tree_pool
+    thread_id = threading.get_ident()
+    if thread_id not in tree_pool:
         logger.info(f"[{thread_id}] Creates local tree.")
-        g.tree = LocalTree(mode='r', debug=False)
-        if not isinstance(g.tree, LocalTree):
+        tree = LocalTree(mode='r', debug=False)
+        if not isinstance(tree, LocalTree):
             raise RuntimeError("Can't use remote tree for the server.")
 
-        tree_dir = Path(g.tree.db_dir)
+        tree_dir = Path(tree.db_dir)
         if (tree_dir / "rtree.dat").exists() and \
                 (tree_dir / "rtree.idx").exists():
-            g.use_rgeocoder = True
+            use_rgeocoder = True
         else:
-            g.use_rgeocoder = False
+            use_rgeocoder = False
 
+        tree_pool[thread_id] = (tree, use_rgeocoder)
 
-@app.teardown_appcontext
-def teardown_localtree(exception):
-    tree = g.pop('tree', None)
-    if tree is not None:
-        import threading
-        thread_id = threading.get_ident()
-        logger.info(f"[{thread_id}] Deletes local tree.")
-        del tree
+    else:
+        tree, use_rgeocoder = tree_pool[thread_id]
+
+    g.tree = tree
+    g.use_rgeocoder = use_rgeocoder
 
 
 @app.route("/")
