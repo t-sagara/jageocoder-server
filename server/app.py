@@ -2,6 +2,8 @@ import copy
 import csv
 import jaconv
 import json
+import logging
+import threading
 from typing import List, Tuple
 import os
 from pathlib import Path
@@ -23,6 +25,8 @@ from jageocoder.address import AddressLevel
 from jageocoder.local import LocalTree
 from jageocoder.node import AddressNode
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 module_version = jageocoder.__version__
 dictionary_version = jageocoder.installed_dictionary_version()
 server_signature = str(uuid.uuid4())
@@ -38,6 +42,9 @@ if envpath.exists:
     dotenv.load_dotenv(envpath)
 
 re_splitter = re.compile(r'[ \u2000,、]+')
+
+# Recycling pool of local trees for each thread
+tree_pool: Dict[int, Tuple[LocalTree, bool]] = {}
 
 
 @app.context_processor
@@ -69,16 +76,28 @@ def _extract_digits(val: str) -> str:
 
 @app.before_request
 def get_localtree() -> None:
-    g.tree = LocalTree(mode='r', debug=False)
-    if not isinstance(g.tree, LocalTree):
-        raise RuntimeError("Can't use remote tree for the server.")
+    global tree_pool
+    thread_id = threading.get_ident()
+    if thread_id not in tree_pool:
+        logger.info(f"[{thread_id}] Creates local tree.")
+        tree = LocalTree(mode='r', debug=False)
+        if not isinstance(tree, LocalTree):
+            raise RuntimeError("Can't use remote tree for the server.")
 
-    tree_dir = Path(g.tree.db_dir)
-    if (tree_dir / "rtree.dat").exists() and \
-            (tree_dir / "rtree.idx").exists():
-        g.use_rgeocoder = True
+        tree_dir = Path(tree.db_dir)
+        if (tree_dir / "rtree.dat").exists() and \
+                (tree_dir / "rtree.idx").exists():
+            use_rgeocoder = True
+        else:
+            use_rgeocoder = False
+
+        tree_pool[thread_id] = (tree, use_rgeocoder)
+
     else:
-        g.use_rgeocoder = False
+        tree, use_rgeocoder = tree_pool[thread_id]
+
+    g.tree = tree
+    g.use_rgeocoder = use_rgeocoder
 
 
 @app.route("/")
