@@ -2,6 +2,7 @@ import copy
 import csv
 import jaconv
 import json
+import logging
 from typing import List, Tuple
 import os
 from pathlib import Path
@@ -23,6 +24,8 @@ from jageocoder.address import AddressLevel
 from jageocoder.local import LocalTree
 from jageocoder.node import AddressNode
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 module_version = jageocoder.__version__
 dictionary_version = jageocoder.installed_dictionary_version()
 server_signature = str(uuid.uuid4())
@@ -69,16 +72,30 @@ def _extract_digits(val: str) -> str:
 
 @app.before_request
 def get_localtree() -> None:
-    g.tree = LocalTree(mode='r', debug=False)
-    if not isinstance(g.tree, LocalTree):
-        raise RuntimeError("Can't use remote tree for the server.")
+    if 'tree' not in g:
+        import threading
+        thread_id = threading.get_ident()
+        logger.info(f"[{thread_id}] Creates local tree.")
+        g.tree = LocalTree(mode='r', debug=False)
+        if not isinstance(g.tree, LocalTree):
+            raise RuntimeError("Can't use remote tree for the server.")
 
-    tree_dir = Path(g.tree.db_dir)
-    if (tree_dir / "rtree.dat").exists() and \
-            (tree_dir / "rtree.idx").exists():
-        g.use_rgeocoder = True
-    else:
-        g.use_rgeocoder = False
+        tree_dir = Path(g.tree.db_dir)
+        if (tree_dir / "rtree.dat").exists() and \
+                (tree_dir / "rtree.idx").exists():
+            g.use_rgeocoder = True
+        else:
+            g.use_rgeocoder = False
+
+
+@app.teardown_appcontext
+def teardown_localtree(exception):
+    tree = g.pop('tree', None)
+    if tree is not None:
+        import threading
+        thread_id = threading.get_ident()
+        logger.info(f"[{thread_id}] Deletes local tree.")
+        del tree
 
 
 @app.route("/")

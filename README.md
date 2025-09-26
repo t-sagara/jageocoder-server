@@ -94,7 +94,7 @@
 
 ## Linux の場合
 
-- Python3.8 以上がインストールされている環境が必要です。
+- Python3.9.2 以上がインストールされている環境が必要です。
 
     他の Python アプリケーションとの競合を防ぐため、
     `venv` 等で仮想環境を作成することをお勧めします。
@@ -104,7 +104,7 @@
 
 - Python パッケージをインストールします。
 
-        $ python -m pip install -r requrements.txt
+        $ python -m pip install -r requirements.txt
 
 - 辞書データファイルをダウンロード・インストールします。
 
