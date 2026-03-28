@@ -14,7 +14,7 @@ charset-normalizer = "^3.1.0"
 Flask-cors = ">=3.0.0"
 Flask-JSONRPC = ">=2.2.0"
 jageocoder = "2.2.0"
-python-dotenv = "^1.0.0"
+python-dotenv = "^1.2.1"
 waitress = "^2.1.2"
 
 [tool.poetry.group.dev.dependencies]
