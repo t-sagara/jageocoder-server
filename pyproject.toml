@@ -18,7 +18,7 @@ python-dotenv = "^1.0.0"
 waitress = "^2.1.2"
 
 [tool.poetry.group.dev.dependencies]
-flake8 = "^5.0.0"
+flake8 = "^7.3.0"
 
 [build-system]
 requires = ["poetry-core"]
