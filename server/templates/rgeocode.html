@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}候補一覧 | Jageocoder{% endblock %}
+
+{% block content %}
+
+<h1>候補の一覧</h1>
+<div id="map"></div>
+<div class="row">
+  <div class="col" id="address"></div>
+</div>
+
+<h2>緯度 {{ "%.4f" | format(lat) }}, 経度 {{ "%.4f" | format(lon) }} 付近の住所ノード</h2>
+<ul id="attributes">
+  {% if nodes|length > 0%}
+  {% for node in nodes %}
+  <li><a href="{{ url_for('show_node', id=node.id) }}">
+    {{ node.get_fullname(" ") }} ({{ node.dataset.title }})
+  </li>
+  {% endfor %}
+  {% else %}
+  条件に該当する住所が見つかりません。
+  <a href="{{ url_for('index') }}">こちら</a>からやり直してください。
+  {% endif %}
+</ul>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/mapcontrol.js') }}"></script>
+<script>
+  let mapdiv = document.getElementById('map');
+  mapdiv.style.display = 'none';
+  {% if nodes|length > 0 %}
+  {% set all_x = nodes | map(attribute='x') | list %}
+  {% set all_y = nodes | map(attribute='y') | list %}
+  {% set center_x = (all_x | sum) / (all_x | length) %}
+  {% set center_y = (all_y | sum) / (all_y | length) %}
+  {% set min_x = [all_x | min, lon] | min %}
+  {% set max_x = [all_x | max, lon] | max %}
+  {% set min_y = [all_y | min, lat] | min %}
+  {% set max_y = [all_y | max, lat] | max %}
+  {% if LAN_MODE != '1' and center_y < 90.0 %}
+  mapdiv.style.display = 'block';
+  let jsonLayers = [];
+  let map = new maplibregl.Map({
+    container: 'map',
+    /*  Use GSI Vector tile
+    style:
+      // 'https://gsi-cyberjapan.github.io/gsivectortile-mapbox-gl-js/std.json',
+      // 'https://gsi-cyberjapan.github.io/optimal_bvmap/style/std.json',
+      // '{{ url_for("static", filename="styles/gsi_optimal_std.json") }}',
+    */
+    /*  Use GSI Raster tile */
+    style: {
+      version: 8,
+      sources: {
+        t_pale: {
+          type: 'raster',
+          tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution:
+            '<a href="http://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html" target="_blank">地理院タイル</a>',
+          },
+        },
+      layers: [
+        {
+          id: 't_pale',
+          type: 'raster',
+          source: 't_pale',
+          minzoom: 0,
+          maxzoom: 18,
+        },
+      ],
+    },
+    /* */
+    center: [{{ lon }}, {{ lat }}],
+    zoom: 10,
+    minZoom: 3,
+    maxZoom: 17
+  });
+
+  const { renderCandidates, reverseGeocoding } = createMapControl(
+    map, jsonLayers, "{{ url_for('show_node', id='0') }}"
+  );
+
+  map.on('load', function() {
+    map.fitBounds(
+      [[{{ min_x }}, {{ min_y }}], [{{ max_x }}, {{ max_y }}]],
+      { padding: 10, maxZoom: 17 }
+    );
+    const initialData = [
+      {% for node in nodes %}
+      {"candidate": {{ node.as_dict() | tojson }}}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    renderCandidates(initialData);
+  });
+
+  let marker = new maplibregl.Marker({
+    draggable: true
+  }).setLngLat(
+    [{{ lon }}, {{ lat }}]
+  ).addTo(map);
+
+  function onDragEnd() {
+    let lnglat = marker.getLngLat();
+    let zoomlevel = map.getZoom();
+    reverseGeocoding(lnglat.lat, lnglat.lng, zoomlevel);
+  }
+
+  marker.on('dragend', onDragEnd);
+  {% endif %}
+  {% endif %}
+</script>
+{% endblock %}

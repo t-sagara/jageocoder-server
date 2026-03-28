@@ -228,9 +228,12 @@ def reverse():
 
     nodes = [x["candidate"] for x in results]
     return render_template(
-        'node_list.html',
+        'rgeocode.html',
         tree=g.tree,
-        nodes=nodes)
+        nodes=nodes,
+        lon=lon,
+        lat=lat,
+    )
 
 
 @app.route("/aza/<aza_id>", methods=['POST', 'GET'])
