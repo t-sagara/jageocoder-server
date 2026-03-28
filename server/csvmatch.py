@@ -3,7 +3,7 @@ import datetime
 import io
 from logging import getLogger
 import re
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List
 
 import charset_normalizer
 from flask import render_template, request, stream_with_context
