@@ -13,7 +13,7 @@ python = ">3.9.1"
 charset-normalizer = "^3.1.0"
 Flask-cors = ">=3.0.0"
 Flask-JSONRPC = ">=2.2.0"
-jageocoder = "2.2.0"
+jageocoder = "2.2.1.1"
 python-dotenv = "^1.0.0"
 waitress = "^2.1.2"
 
